@@ -217,9 +217,13 @@ match_table_next_depth(MatchTable *dest, MatchTable *src, size_t idx)
     for (size_t i = 0; i < src->size; ++i)
     {
         depth = match_table_get_depth(src, src->syms[i]);
-        if (depth > 0)
+        if (depth == 0)
         {
-            val = match_table_get(src, src->syms[i]);
+            match_table_add(dest, src->syms[i], 0, src->objs[i]);
+        }
+        else
+        {
+            val = src->objs[i];
             if (idx < minim_list_length(val))
                 match_table_add(dest, src->syms[i], depth - 1, minim_list_ref(val, idx));
         }
@@ -377,7 +381,28 @@ match_transform(SyntaxNode *match, SyntaxNode *ast, MatchTable *table,
             if (j > ast->childc)    // match too long
                 return false;
 
-            if (j == ast->childc)   // match possibly problematic
+            if (match->type == SYNTAX_NODE_LIST && i + 2 == match->childc &&
+                match->children[i]->sym && strcmp(match->children[i]->sym, ".") == 0)
+            {
+                if (j + 1 == ast->childc)
+                {
+                    add_null_variables(match->children[i + 1], table, reserved, pdepth);
+                    return true;
+                }
+                else
+                {
+                    SyntaxNode *rest;
+
+                    init_syntax_node(&rest, SYNTAX_NODE_LIST);
+                    rest->childc = ast->childc - j;
+                    rest->children = GC_alloc(rest->childc * sizeof(SyntaxNode*));
+                    for (size_t k = 0; k < rest->childc; ++k)
+                        rest->children[k] = ast->children[k + j];
+
+                    return match_transform(match->children[i + 1], rest, table, reserved, pdepth);
+                }
+            }
+            else if (j == ast->childc)   // match possibly problematic
             {
                 if (is_match_pattern(match, i))
                 {
@@ -389,8 +414,7 @@ match_transform(SyntaxNode *match, SyntaxNode *ast, MatchTable *table,
                     return false;
                 }
             }
-
-            if (is_match_pattern(match, i))
+            else if (is_match_pattern(match, i))
             {
                 MatchTable table2;
 
@@ -439,21 +463,35 @@ match_transform(SyntaxNode *match, SyntaxNode *ast, MatchTable *table,
 static size_t
 pattern_length(MatchTable *table, SyntaxNode *ast)
 {
-    MinimObject *val;
-    size_t ret;
-
     if (ast->type == SYNTAX_NODE_LIST || ast->type == SYNTAX_NODE_VECTOR)
     {
+        size_t len, maybe = 0;
+
         for (size_t i = 0; i < ast->childc; ++i)
         {
-            ret = pattern_length(table, ast->children[i]);
-            if (ret != SIZE_MAX) return ret;
+            len = pattern_length(table, ast->children[i]);
+            if (maybe == 0)         maybe = len;
+            if (len != 0 && maybe != len)
+                THROW(NULL, minim_error("pattern length mismatch", NULL));
         }
+
+        return maybe;
     }
-    else
+    else if (ast->type == SYNTAX_NODE_PAIR)
     {
-        val = match_table_get(table, ast->sym);
-        return (val) ? minim_list_length(val) : SIZE_MAX;
+        size_t car, cdr;
+
+        car = pattern_length(table, ast->children[0]);
+        cdr = pattern_length(table, ast->children[1]);
+        if (car != 0 && cdr != 0 && car != cdr)
+            THROW(NULL, minim_error("pattern length mismatch", NULL));
+
+        return (car > cdr) ? car : cdr;
+    }
+    else // ast->type == SYNTAX_NODE_DATUM
+    {
+        MinimObject *val = match_table_get(table, ast->sym);
+        return (val && minim_listp(val)) ? minim_list_length(val) : 0;
     }
 
     return SIZE_MAX;
@@ -477,7 +515,27 @@ apply_transformation(MatchTable *table, SyntaxNode *ast)
 
         while (i < ast->childc)
         {
-            if (is_match_pattern(ast, i))
+            if (ast->type == SYNTAX_NODE_LIST && i + 2 == ast->childc &&
+                ast->children[i]->sym && strcmp(ast->children[i]->sym, ".") == 0)
+            {
+                SyntaxNode* rest = apply_transformation(table, ast->children[i + 1]);
+
+                if (rest->childc > 0)
+                {
+                    ast->childc += rest->childc;
+                    ast->children = GC_realloc(ast->children, ast->childc * sizeof(SyntaxNode*));
+                    for (size_t j = 0; j < rest->childc; ++j)
+                        ast->children[i + j] = rest->children[j];
+
+                    i += rest->childc;
+                }
+                else
+                {
+                    ast->childc -= 2;
+                    ast->children = GC_realloc(ast->children, ast->childc * sizeof(SyntaxNode*));
+                }
+            }
+            else if (is_match_pattern(ast, i))
             {
                 MatchTable table2;
                 SyntaxNode *sub;
@@ -702,12 +760,6 @@ valid_replacep(MinimEnv *env, SyntaxNode* replace, MatchTable *table, SymbolList
 
             if (depth != SIZE_MAX)  // in table
             {
-                if (pdepth > depth)
-                {
-                    THROW(env, minim_syntax_error("missing ellipse in pattern", NULL, replace, NULL));
-                    return false;
-                }
-
                 if (pdepth < depth)
                 {
                     THROW(env, minim_syntax_error("too many ellipses in pattern", NULL, replace, NULL));
