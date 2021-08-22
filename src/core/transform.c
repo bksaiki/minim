@@ -775,9 +775,9 @@ SyntaxNode* transform_syntax(MinimEnv *env, SyntaxNode* ast)
             {
                 if (MINIM_SYNTAX(op) == minim_builtin_syntax)
                     return ast;
-
+                
                 if (MINIM_OBJ_TRANSFORMP(op))
-                    ast = transform_loc(env, op, ast);
+                    return transform_syntax(env, transform_loc(env, op, ast));
             }
         }
 
@@ -792,7 +792,7 @@ SyntaxNode* transform_syntax(MinimEnv *env, SyntaxNode* ast)
         {
             val = env_get_sym(env, ast->sym);
             if (val && MINIM_OBJ_TRANSFORMP(val))
-                ast = transform_loc(env, val, ast);
+                return transform_syntax(env, transform_loc(env, val, ast));
         }
     }
 
