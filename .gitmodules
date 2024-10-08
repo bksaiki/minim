@@ -1,0 +1,4 @@
+[submodule "bdwgc"]
+	path = bdwgc
+	url = https://github.com/ivmai/bdwgc
+	branch = release-8_2
