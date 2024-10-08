@@ -56,12 +56,6 @@ size_t bucket_sizes[] = {
     0
 };
 
-typedef struct intern_table {
-    obj *buckets;
-    size_t *alloc_ptr;
-    size_t alloc, size;
-} intern_table;
-
 #define MINIM_INTERN_TABLE_LOAD_FACTOR     0.75
 #define start_size_ptr                     (&bucket_sizes[0])
 #define load_factor(s, a)                  ((double)(s) / (double)(a))

@@ -19,5 +19,5 @@ static size_t hash_bytes2(const void *data, size_t len, size_t hash0) {
 }
 
 size_t hash_bytes(const void *data, size_t len) {
-    hash_bytes2(data, len, hash_init);
+    return hash_bytes2(data, len, hash_init);
 }

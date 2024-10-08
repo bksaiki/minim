@@ -2,20 +2,28 @@
 
 #include "minim.h"
 
+static inline int Mimmediatep(obj x) {
+    return Mnullp(x)
+        || Mtruep(x)
+        || Mfalsep(x)
+        || Mfixnump(x);
+}
+
 static obj eval_k(obj e, obj env, obj k) {
     obj x;
 
-    if (Mnullp(e) || Mtruep(e) || Mfalsep(e)) {
+    if (Mimmediatep(e)) {
         x = e;
         goto do_k;
-    } else if (Mfixnump(e)) {
-        x = e;
+    } else if (Msymbolp(e)) {
+        x = env_find(env, e);
+        if (Mnullp(x))
+            minim_error1("eval_expr", "unbound identifier", e);
+
+        x = Mcdr(x);
         goto do_k;
     } else {
-        fprintf(stderr, "cannot evaluate expression: ");
-        write_obj(stderr, e);
-        fprintf(stderr, "\n");
-        minim_shutdown(1);
+        minim_error1("eval_expr", "cannot evaluate", e);
     }
 
 do_k:
@@ -26,9 +34,7 @@ do_k:
         return x;
     
     default:
-        fprintf(stderr, "unimplemented for continuation type %d\n", Mcontinuation_type(k));
-        minim_shutdown(1);
-        break;
+        minim_error1("eval_expr", "unimplemented continuation", k);
     }
 }
 

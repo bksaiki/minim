@@ -116,6 +116,10 @@ obj Mfixnum(iptr v);
 
 obj Mcons(obj car, obj cdr);
 
+#define Mlist1(x)           Mcons(x, Mnull)
+#define Mlist2(x, y)        Mcons(x, Mlist1(y))
+#define Mlist3(x, y, z)     Mcons(x, Mlist2(y, z))
+
 // Continuation
 // +------------+
 // |    type    | [0, 1)
@@ -157,10 +161,10 @@ void write_obj(FILE *out, obj o);
 
 // Errors
 
-void minim_error(const char *name, const char *msg);
-void minim_error1(const char *name, const char *msg, obj x);
-void minim_error2(const char *name, const char *msg, obj x, obj y);
-void minim_error3(const char *name, const char *msg, obj x, obj y, obj z);
+NORETURN void minim_error(const char *name, const char *msg);
+NORETURN void minim_error1(const char *name, const char *msg, obj x);
+NORETURN void minim_error2(const char *name, const char *msg, obj x, obj y);
+NORETURN void minim_error3(const char *name, const char *msg, obj x, obj y, obj z);
 
 // Intern table
 

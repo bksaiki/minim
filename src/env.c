@@ -3,7 +3,7 @@
 #include "minim.h"
 
 obj empty_env(void) {
-    return Mnull;    
+    return Mcons(Mnull, Mnull); 
 }
 
 obj env_extend(obj env) {
