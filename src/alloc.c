@@ -16,18 +16,17 @@ obj Msymbol(const char *s) {
     return x;
 }
 
-obj Mcons(obj car, obj cdr) {
-    obj x = GC_malloc(Mcons_size);
-    obj_type(x) = CONS_OBJ_TYPE;
-    Mcar(x) = car;
-    Mcdr(x) = cdr;
-    return x;
-}
-
 obj Mfixnum(iptr v) {
     obj x = GC_malloc(Mfixnum_size);
     obj_type(x) = FIXNUM_OBJ_TYPE;
     Mfixnum_value(x) = v;
+    return x;
+}
+
+obj Mchar(int c) {
+    obj x = GC_malloc(Mchar_size);
+    obj_type(x) = CHAR_OBJ_TYPE;
+    Mchar_value(x) = c;
     return x;
 }
 
@@ -37,6 +36,14 @@ obj Mstring(const char* s) {
     Mstring_length(x) = strlen(s);
     Mstring_value(x) = GC_malloc_atomic(Mstring_length(x) + 1);
     strncpy(Mstring_value(x), s, Mstring_length(x) + 1);
+    return x;
+}
+
+obj Mcons(obj car, obj cdr) {
+    obj x = GC_malloc(Mcons_size);
+    obj_type(x) = CONS_OBJ_TYPE;
+    Mcar(x) = car;
+    Mcdr(x) = cdr;
     return x;
 }
 
@@ -71,15 +78,6 @@ obj Minput_string_port(obj s) {
     obj x = GC_malloc(Mport_size);
     obj_type(x) = PORT_OBJ_TYPE;
     Mport_flags(x) = PORT_FLAG_READ | PORT_FLAG_STR;
-    Mport_buffer(x) = s;
-    Mport_count(x) = 0;
-    return x;
-}
-
-obj Moutput_string_port(obj s) {
-    obj x = GC_malloc(Mport_size);
-    obj_type(x) = PORT_OBJ_TYPE;
-    Mport_flags(x) = PORT_FLAG_STR;
     Mport_buffer(x) = s;
     Mport_count(x) = 0;
     return x;

@@ -6,6 +6,7 @@ obj Mnull;
 obj Mtrue;
 obj Mfalse;
 obj Mvoid;
+obj Meof;
 
 obj Mbegin_symbol;
 obj Mif_symbol;
@@ -22,6 +23,8 @@ void minim_init(void) {
     obj_type(Mfalse) = SPECIAL_OBJ_TYPE;
     Mvoid = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Mvoid) = SPECIAL_OBJ_TYPE;
+    Meof = GC_malloc_uncollectable(sizeof(byte));
+    obj_type(Meof) = SPECIAL_OBJ_TYPE;
 
     // intern table
     itab = make_intern_table();

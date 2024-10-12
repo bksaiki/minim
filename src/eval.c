@@ -15,8 +15,8 @@ NORETURN void raise_arity_exn(obj prim, obj args) {
 static obj do_prim(obj f, obj args) {
     obj (*fn)() = Mprim_value(f);
 
-    switch (Mprim_arity(f)) {
-
+    switch (Mprim_arity(f))
+    {
     case 0:
         if (!Mnullp(args))
             raise_arity_exn(f, args);

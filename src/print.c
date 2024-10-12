@@ -2,6 +2,24 @@
 
 #include "minim.h"
 
+static void write_char(FILE *out, obj o) {
+    int c = Mchar_value(o);
+
+    fputs("#\\", out);
+    if (c == '\0') fputs("nul", out);
+    else if (c == BEL_CHAR) fputs("alarm", out);
+    else if (c == BS_CHAR) fputs("backspace", out);
+    else if (c == '\t') fputs("tab", out);
+    else if (c == '\n') fputs("newline", out);
+    else if (c == VT_CHAR) fputs("vtab", out);
+    else if (c == FF_CHAR) fputs("page", out);
+    else if (c == CR_CHAR) fputs("return", out);
+    else if (c == ESC_CHAR) fputs("esc", out);
+    else if (c == ' ') fputs("space", out);
+    else if (c == DEL_CHAR) fputs("delete", out);
+    else fputc(c, out);
+}
+
 static void write_pair(FILE *out, obj o) {
     fputc('(', out);
 loop:
@@ -29,10 +47,14 @@ void write_obj(FILE *out, obj o) {
         fputs("#f", out);
     } else if (Mvoidp(o)) {
         fputs("#<void>", out);
+    } else if (Meofp(o)) {
+        fputs("#<eof>", out);
     } else if (Msymbolp(o)) {
         fputs(Msymbol_value(o), out);
     } else if (Mfixnump(o)) {
         fprintf(out, "%ld", Mfixnum_value(o));
+    } else if (Mcharp(o)) {
+        write_char(out, o);
     } else if (Mstringp(o)) {
         fprintf(out, "\"%s\"", Mstring_value(o));
     } else if (Mconsp(o)) {

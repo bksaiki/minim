@@ -38,6 +38,18 @@ typedef void            *obj;
 #define ptr_size        sizeof(void*)
 #define ptr_add(p, d)   ((void *) ((uptr) (p)) + (d))
 
+#define NUL_CHAR        ((int) 0x00)        // null
+#define BEL_CHAR        ((int) 0x07)        // alarm / bell
+#define BS_CHAR         ((int) 0x08)        // backspace
+#define HT_CHAR         ((int) 0x09)        // horizontal tab
+#define LF_CHAR         ((int) 0x0A)        // line feed
+#define VT_CHAR         ((int) 0x0B)        // vertical tab
+#define FF_CHAR         ((int) 0x0C)        // form feed (page break)
+#define CR_CHAR         ((int) 0x0D)        // carriage return
+#define ESC_CHAR        ((int) 0x1B)        // escape
+#define SP_CHAR         ((int) 0x20)        // space
+#define DEL_CHAR        ((int) 0x7F)        // delete
+
 // Syntax
 
 extern obj Mbegin_symbol;
@@ -49,6 +61,7 @@ typedef enum {
     SPECIAL_OBJ_TYPE,
     SYMBOL_OBJ_TYPE,
     FIXNUM_OBJ_TYPE,
+    CHAR_OBJ_TYPE,
     STRING_OBJ_TYPE,
     CONS_OBJ_TYPE,
     PRIM_OBJ_TYPE,
@@ -66,11 +79,13 @@ extern obj Mnull;
 extern obj Mtrue;
 extern obj Mfalse;
 extern obj Mvoid;
+extern obj Meof;
 
 #define Mnullp(x)   ((x) == Mnull)
 #define Mtruep(x)   ((x) == Mtrue)
 #define Mfalsep(x)  ((x) == Mfalse)
 #define Mvoidp(x)   ((x) == Mvoid)
+#define Meofp(x)    ((x) == Meof)
 
 #define Mboolp(x)   (Mtruep(x) || Mfalsep(x))
 #define Mnot(x)     (Mfalsep(x) ? Mtrue : Mfalse)
@@ -97,6 +112,17 @@ obj Msymbol(const char *s);
 
 obj Mfixnum(iptr v);
 
+// Char
+// +------------+
+// |    type    | [0, 1)
+// |     v      | [4, 8)
+// +------------+ 
+#define Mchar_size          (1 * ptr_size)
+#define Mcharp(o)           (obj_type(o) == CHAR_OBJ_TYPE)
+#define Mchar_value(o)      (*((int*) ptr_add(o, sizeof(int))))
+
+obj Mchar(int c);
+
 // String
 // +------------+
 // |    type    | [0, 1)
@@ -107,6 +133,7 @@ obj Mfixnum(iptr v);
 #define Mstringp(o)             (obj_type(o) == STRING_OBJ_TYPE)
 #define Mstring_value(o)        (*((char**) ptr_add(o, ptr_size)))
 #define Mstring_length(o)       (*((uptr*) ptr_add(o, 2 * ptr_size)))
+#define Mstring_ref(o, i)       (Mstring_value(o)[i])
 
 obj Mstring(const char* s);
 
@@ -220,7 +247,11 @@ obj Mseq_continuation(obj prev, obj seq);
 obj Minput_file_port(FILE *f);
 obj Moutput_file_port(FILE *f);
 obj Minput_string_port(obj s);
-obj Moutput_string_port(obj s);
+
+int port_readyp(obj p);
+int port_peek(obj p);
+int port_read(obj p);
+void port_write(int c, obj p);
 
 // Environments
 
@@ -249,6 +280,10 @@ obj prim_env(obj env);
 // Evaluation
 
 obj eval_expr(obj e, obj env);
+
+// Reading
+
+obj read_object(obj ip);
 
 // Printing
 
