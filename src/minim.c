@@ -11,11 +11,12 @@ int main(int argc, char **argv) {
     obj x, e, env;
 
     env = empty_env();
-    prim_env(env);
+    env = prim_env(env);
     env_insert(env, Mintern("x"), Mfixnum(1));
 
-    e = Mlist3(Mintern("cons"), Mintern("x"), Mfixnum(2));
-    e = Mlist2(Mintern("cdr"), e);
+    // e = Mlist3(Mintern("cons"), Mintern("x"), Mfixnum(2));
+    // e = Mlist2(Mintern("cdr"), e);
+    e = Mlist4(Mintern("if"), Mfalse, Mfixnum(1), Mfixnum(0));
     x = eval_expr(e, env);
 
     // x = eval_expr(Mintern("cons"), env);

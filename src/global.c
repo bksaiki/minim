@@ -7,6 +7,9 @@ obj Mtrue;
 obj Mfalse;
 obj Mvoid;
 
+obj Mbegin_symbol;
+obj Mif_symbol;
+
 intern_table *itab;
 
 void minim_init(void) {
@@ -23,6 +26,10 @@ void minim_init(void) {
     // intern table
     itab = make_intern_table();
     GC_add_roots(itab, ptr_add(itab, sizeof(intern_table)));
+
+    // intern symbols
+    Mbegin_symbol = Mintern("begin");
+    Mif_symbol = Mintern("if");
 
     // initialize primitives
     init_prims();

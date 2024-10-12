@@ -57,4 +57,4 @@ $(BUILD_DIR)%/.:
 $(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c | $$(@D)/.
 	$(CC) $(CFLAGS) $(INCFLAGS) $(DEPFLAGS) -c -o $@ $<
 
-.PHONY: all gc clean
+.PHONY: all clean gc $(EXENAME)

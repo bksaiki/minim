@@ -24,8 +24,10 @@ void init_prims(void) {
 #define env_add_prim(e, p)  \
     env_insert(e, Mprim_name(p), p)
 
-void prim_env(obj env) {
+obj prim_env(obj env) {
+    env = env_extend(env);
     env_add_prim(env, car_prim);
     env_add_prim(env, cdr_prim);
     env_add_prim(env, cons_prim);
+    return env;
 }

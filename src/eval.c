@@ -56,10 +56,28 @@ static obj eval_k(obj e, obj env, obj k) {
 
 loop:
     if (Mconsp(e)) {
-        // cons => application
-        k = Mapp_continuation(k, e);
-        e = Mcar(e);
-        goto loop;
+        // cons => syntax or application
+        obj head = Mcar(e);
+        if (head == Mbegin_symbol) {
+            // begin
+            if (Mnullp(Mcdr(e))) {
+                // no expressions means void
+                x = Mvoid;
+                goto do_k;
+            } else {
+                minim_error1("eval_expr", "unimplemented", e);
+            }
+        } else if (head == Mif_symbol) {
+            // if
+            k = Mcond_continuation(k, Mcaddr(e), Mcar(Mcdddr(e)));
+            e = Mcadr(e);
+            goto loop;
+        } else {
+            // application
+            k = Mapp_continuation(k, e);
+            e = Mcar(e);
+            goto loop;
+        }
     } else if (Msymbolp(e)) {
         // variable => lookup
         x = env_find(env, e);
@@ -78,6 +96,8 @@ loop:
     } else {
         minim_error1("eval_expr", "cannot evaluate", e);
     }
+
+    minim_error1("eval_expr", "unreachable", e);
 
 do_app:
     x = Mcar(Mcontinuation_app_hd(k));
@@ -120,8 +140,19 @@ do_k:
             e = Mcadr(Mcontinuation_app_tl(k));
             goto loop;
         }
+
+    case COND_CONT_TYPE:
+        // if expressions
+        e = Mfalsep(x) ? Mcontinuation_cond_iff(k) : Mcontinuation_cond_ift(k);
+        k = Mcontinuation_prev(k);
+        goto loop;
+
     default:
-        minim_error1("eval_expr", "unimplemented continuation", k);
+        minim_error1(
+            "eval_expr",
+            "unimplemented continuation",
+            Mfixnum(Mcontinuation_type(k))
+        );
     }
 }
 
