@@ -35,7 +35,13 @@ void write_obj(FILE *out, obj o) {
         fprintf(out, "%ld", Mfixnum_value(o));
     } else if (Mconsp(o)) {
         write_pair(out, o);
+    } else if (Mprimp(o)) {
+        fputs("#<procedure:", out);
+        write_obj(out, Mprim_name(o));
+        fputc('>', out);
+    } else if (Mcontinuationp(o)) {
+        fputs("#<procedure>", out);
     } else {
-        fputs("#<garbage", out);
+        fputs("#<garbage>", out);
     }
 }

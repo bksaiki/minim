@@ -9,3 +9,13 @@ obj Mnull_continuation(void) {
     Mcontinuation_prev(x) = Mnull;
     return x;
 }
+
+obj Mapp_continuation(obj prev, obj args) {
+    obj x = GC_malloc(Mcontinuation_size(3));
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = APP_CONT_TYPE;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_app_hd(x) = args;
+    Mcontinuation_app_tl(x) = NULL;
+    return x;
+}

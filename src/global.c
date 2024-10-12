@@ -23,6 +23,9 @@ void minim_init(void) {
     // intern table
     itab = make_intern_table();
     GC_add_roots(itab, ptr_add(itab, sizeof(intern_table)));
+
+    // initialize primitives
+    init_prims();
 }
 
 

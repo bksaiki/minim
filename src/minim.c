@@ -8,12 +8,17 @@ int main(int argc, char **argv) {
     GC_init();
     minim_init();
 
-    obj x, env;
+    obj x, e, env;
 
     env = empty_env();
+    prim_env(env);
     env_insert(env, Mintern("x"), Mfixnum(1));
 
-    x = eval_expr(Mintern("x"), env);
+    e = Mlist3(Mintern("cons"), Mintern("x"), Mfixnum(2));
+    e = Mlist2(Mintern("cdr"), e);
+    x = eval_expr(e, env);
+
+    // x = eval_expr(Mintern("cons"), env);
     write_obj(stdout, x);
     putc('\n', stdout);
     

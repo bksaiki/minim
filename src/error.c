@@ -3,7 +3,7 @@
 #include "minim.h"
 
 NORETURN static void do_error(const char *name, const char *msg, obj args) {
-    // TODO: no Scheme-side errorhandling
+    // TODO: no Scheme-side error handling
     if (name) {
         fprintf(stderr, "Error in %s: %s", name, msg);
     } else {

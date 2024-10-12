@@ -45,6 +45,7 @@ typedef enum {
     SYMBOL_OBJ_TYPE,
     FIXNUM_OBJ_TYPE,
     CONS_OBJ_TYPE,
+    PRIM_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
 } obj_type_t;
 
@@ -120,6 +121,21 @@ obj Mcons(obj car, obj cdr);
 #define Mlist2(x, y)        Mcons(x, Mlist1(y))
 #define Mlist3(x, y, z)     Mcons(x, Mlist2(y, z))
 
+// Primitive
+// +------------+
+// |    type    | [0, 1)
+// |     fn     | [8, 16)
+// |    arity   | [16, 24)
+// |    name    | [24, 32)
+// +------------+
+#define Mprim_size          (4 * ptr_size)
+#define Mprimp(o)           (obj_type(o) == PRIM_OBJ_TYPE)
+#define Mprim_value(o)      (*((void **) ptr_add(o, ptr_size)))
+#define Mprim_arity(o)      (*((iptr*) ptr_add(o, 2 * ptr_size)))
+#define Mprim_name(o)       (*((obj *) ptr_add(o, 3 * ptr_size)))
+
+obj Mprim(void *fn, iptr arity, const char *name);
+
 // Continuation
 // +------------+
 // |    type    | [0, 1)
@@ -133,12 +149,18 @@ obj Mcons(obj car, obj cdr);
 #define Mcontinuation_prev(o)       (*((obj*) ptr_add(o, ptr_size)))
 
 typedef enum {
-    NULL_CONT_TYPE
+    NULL_CONT_TYPE,
+    APP_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_nullp(o)      (Mcontinuation_type(o) == NULL_CONT_TYPE)
 
+#define Mcontinuation_appp(o)       (Mcontinuation_type(o) == APP_CONT_TYPE)
+#define Mcontinuation_app_hd(o)  (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mcontinuation_app_tl(o)   (*((obj*) ptr_add(o, 3 * ptr_size)))
+
 obj Mnull_continuation(void);
+obj Mapp_continuation(obj prev, obj args);
 
 // Environments
 
@@ -147,9 +169,22 @@ obj env_extend(obj env);
 obj env_find(obj env, obj k);
 void env_insert(obj env, obj k, obj v);
 
+// List
+
+iptr list_length(obj x);
+
+obj car_proc(obj x);
+obj cdr_proc(obj x);
+obj Mlength(obj x);
+
 // Hashing
 
 size_t hash_bytes(const void *data, size_t len);
+
+// Primitives
+
+void init_prims(void);
+void prim_env(obj env);
 
 // Evaluation
 
