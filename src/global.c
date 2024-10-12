@@ -40,6 +40,5 @@ void minim_init(void) {
 
 
 NORETURN void minim_shutdown(int code) {
-    GC_deinit();
     exit(code);
 }

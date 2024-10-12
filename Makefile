@@ -1,6 +1,7 @@
 BUILD_DIR = build
 GC_DIR = bdwgc
 SRC_DIR = src
+TEST_DIR = tests
 
 CFLAGS ?= -Wall -std=c11 -O3 -g
 DEPFLAGS ?= -MMD -MP
@@ -31,6 +32,9 @@ clean:
 clean-all: clean
 	$(MAKE) -C $(GC_DIR) clean
 
+test: $(EXENAME) $(BUILD_DIR)/read
+	$(BUILD_DIR)/read
+
 $(EXENAME): $(BUILD_DIR) gc $(CONFIG) $(OBJS)
 	$(CC) $(CFLAGS) $(INCFLAGS) $(OBJS) $(ENTRY) $(LDFLAGS) -o $(EXENAME)
 
@@ -57,4 +61,7 @@ $(BUILD_DIR)%/.:
 $(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c | $$(@D)/.
 	$(CC) $(CFLAGS) $(INCFLAGS) $(DEPFLAGS) -c -o $@ $<
 
-.PHONY: all clean gc $(EXENAME)
+$(BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
+	$(CC) $(CFLAGS) $(INCFLAGS) $(DEPFLAGS) -o $@ $(OBJS) $< $(LDFLAGS)
+
+.PHONY: all clean gc

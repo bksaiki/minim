@@ -33,4 +33,5 @@ int main(int argc, char **argv) {
     // putc('\n', stdout);
     
     minim_shutdown(0);
+    GC_deinit();
 }

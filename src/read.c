@@ -67,9 +67,9 @@ static iptr char_to_decnum(int c) {
 
 static iptr char_to_hexnum(int c) {
     if ('A' <= c && c <= 'F')
-        return 10 + (c - 'A');
+        return 10  + (c - 'A');
     else if ('a' <= c && c <= 'f')
-        return 10 + (c - 'a');
+        return 10  + (c - 'a');
     else
         return char_to_decnum(c);
 }
@@ -198,6 +198,7 @@ static obj read_pair(obj ip, char open_paren) {
 
     if (c == ')' || c == ']' || c == '}') {
         // empty list
+        port_read(ip);
         assert_matching_paren(open_paren, c);
         return Mnull;
     }
@@ -280,6 +281,7 @@ loop:
         case 'x':
             // hex number
             port_read(ip);
+            c = port_read(ip);
             buffer[0] = '#';
             buffer[1] = 'x';
             goto read_hex;
@@ -359,15 +361,14 @@ read_hex:
         if (c == '-') {
             sign = -1;
         } else if (c != '+') {
-            num = char_to_decnum(c);
+            num = char_to_hexnum(c);
         }
 
         // magnitude
         while (isxdigit(c = port_peek(ip))) {
             port_read(ip);
             buffer[i++] = c;
-            num = (num * 10) + char_to_hexnum(c);
-            buffer[i++] = c;
+            num = (num * 16) + char_to_hexnum(c);
         }
 
         if (symbol_charp(c)) {
@@ -426,7 +427,7 @@ read_symbol:
                 minim_error("read_object", "symbol exceeded max length");
             }
 
-            read_char(ip);
+            port_read(ip);
             buffer[i++] = c;
         }
 
@@ -434,7 +435,7 @@ read_symbol:
         buffer[i] = '\0';
         return Mintern(buffer);
     } else if (c == EOF) {
-        return NULL;
+        return Meof;
     } else {
         minim_error1("read_object", "unexpected input", Mchar(c));
     }
