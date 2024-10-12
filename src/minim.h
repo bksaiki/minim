@@ -49,9 +49,11 @@ typedef enum {
     SPECIAL_OBJ_TYPE,
     SYMBOL_OBJ_TYPE,
     FIXNUM_OBJ_TYPE,
+    STRING_OBJ_TYPE,
     CONS_OBJ_TYPE,
     PRIM_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
+    PORT_OBJ_TYPE
 } obj_type_t;
 
 // Objects
@@ -94,6 +96,19 @@ obj Msymbol(const char *s);
 #define Mfixnum_value(o)    (*((iptr*) ptr_add(o, ptr_size)))
 
 obj Mfixnum(iptr v);
+
+// String
+// +------------+
+// |    type    | [0, 1)
+// |    str     | [8, 16)
+// |    len     | [16, 24)
+// +------------+ 
+#define Mstring_size            (3 * ptr_size)
+#define Mstringp(o)             (obj_type(o) == STRING_OBJ_TYPE)
+#define Mstring_value(o)        (*((char**) ptr_add(o, ptr_size)))
+#define Mstring_length(o)       (*((uptr*) ptr_add(o, 2 * ptr_size)))
+
+obj Mstring(const char* s);
 
 // Pair
 // +------------+
@@ -178,6 +193,34 @@ obj Mnull_continuation(void);
 obj Mapp_continuation(obj prev, obj args);
 obj Mcond_continuation(obj prev, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj seq);
+
+// Port 
+// +------------+
+// |    type    | [0, 1)
+// |    flags   | [1, 2)
+// |    buffer  | [8, 16)
+// |    count   | [16, 24)
+// +------------+
+#define Mport_size          (3 * ptr_size)
+#define Mportp(o)           (obj_type(o) == PORT_OBJ_TYPE)
+#define Mport_flags(o)      (*((byte*) ptr_add(o, 1)))
+#define Mport_file(o)       (*((FILE**) ptr_add(o, ptr_size)))
+#define Mport_buffer(o)     (*((char**) ptr_add(o, ptr_size)))
+#define Mport_count(o)      (*((uptr*) ptr_add(o, 2 * ptr_size)))
+
+#define PORT_FLAG_OPEN      0x1
+#define PORT_FLAG_READ      0x2
+#define PORT_FLAG_STR       0x4
+
+#define Minput_portp(o)     (Mportp(o) && (Mport_flags(o) & PORT_FLAG_READ))
+#define Moutput_portp(o)    (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_READ))
+#define Mfile_portp(o)      (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_STR))
+#define Mstring_portp(o)    (Mportp(o) && (Mport_flags(o) & PORT_FLAG_STR))
+
+obj Minput_file_port(FILE *f);
+obj Moutput_file_port(FILE *f);
+obj Minput_string_port(obj s);
+obj Moutput_string_port(obj s);
 
 // Environments
 

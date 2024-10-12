@@ -33,12 +33,18 @@ void write_obj(FILE *out, obj o) {
         fputs(Msymbol_value(o), out);
     } else if (Mfixnump(o)) {
         fprintf(out, "%ld", Mfixnum_value(o));
+    } else if (Mstringp(o)) {
+        fprintf(out, "\"%s\"", Mstring_value(o));
     } else if (Mconsp(o)) {
         write_pair(out, o);
     } else if (Mprimp(o)) {
         fputs("#<procedure:", out);
         write_obj(out, Mprim_name(o));
         fputc('>', out);
+    } else if (Minput_portp(o)) {
+        fputs("#<input-port>", out);
+    } else if (Moutput_portp(o)) {
+        fputs("#<output-port>", out);
     } else if (Mcontinuationp(o)) {
         fputs("#<procedure>", out);
     } else {

@@ -9,7 +9,7 @@ static inline int Mimmediatep(obj x) {
 }
 
 NORETURN void raise_arity_exn(obj prim, obj args) {
-    minim_error2(Mprim_name(prim), "arity mistmatch", Mfixnum(Mprim_arity(prim)), Mlength(args));
+    minim_error2(Mprim_name(prim), "arity mismatch", Mfixnum(Mprim_arity(prim)), Mlength(args));
 }
 
 static obj do_prim(obj f, obj args) {
