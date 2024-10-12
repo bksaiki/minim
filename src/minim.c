@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
     // e = Mlist3(Mintern("cons"), Mintern("x"), Mfixnum(2));
     // e = Mlist2(Mintern("cdr"), e);
-    e = Mlist4(Mintern("if"), Mfalse, Mfixnum(1), Mfixnum(0));
+    e = Mlist4(Mintern("begin"), Mfixnum(1), Mfixnum(2), Mfixnum(3));
     x = eval_expr(e, env);
 
     // x = eval_expr(Mintern("cons"), env);

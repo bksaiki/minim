@@ -157,24 +157,27 @@ obj Mprim(void *fn, iptr arity, const char *name);
 typedef enum {
     NULL_CONT_TYPE,
     APP_CONT_TYPE,
-    COND_CONT_TYPE
+    COND_CONT_TYPE,
+    SEQ_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_nullp(o)      (Mcontinuation_type(o) == NULL_CONT_TYPE)
-
-obj Mnull_continuation(void);
 
 #define Mcontinuation_appp(o)       (Mcontinuation_type(o) == APP_CONT_TYPE)
 #define Mcontinuation_app_hd(o)     (*((obj*) ptr_add(o, 2 * ptr_size)))
 #define Mcontinuation_app_tl(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-obj Mapp_continuation(obj prev, obj args);
-
 #define Mcontinuation_condp(o)          (Mcontinuation_type(o) == COND_CONT_TYPE)
 #define Mcontinuation_cond_ift(o)       (*((obj*) ptr_add(o, 2 * ptr_size)))
 #define Mcontinuation_cond_iff(o)       (*((obj*) ptr_add(o, 3 * ptr_size)))
 
+#define Mcontinuation_seqp(o)           (Mcontinuation_type(o) == SEQ_CONT_TYPE)
+#define Mcontinuation_seq_value(o)      (*((obj*) ptr_add(o, 2 * ptr_size)))
+
+obj Mnull_continuation(void);
+obj Mapp_continuation(obj prev, obj args);
 obj Mcond_continuation(obj prev, obj ift, obj iff);
+obj Mseq_continuation(obj prev, obj seq);
 
 // Environments
 

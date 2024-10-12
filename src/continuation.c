@@ -11,7 +11,7 @@ obj Mnull_continuation(void) {
 }
 
 obj Mapp_continuation(obj prev, obj args) {
-    obj x = GC_malloc(Mcontinuation_size(3));
+    obj x = GC_malloc(Mcontinuation_size(2));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = APP_CONT_TYPE;
     Mcontinuation_prev(x) = prev;
@@ -21,11 +21,20 @@ obj Mapp_continuation(obj prev, obj args) {
 }
 
 obj Mcond_continuation(obj prev, obj ift, obj iff) {
-    obj x = GC_malloc(Mcontinuation_size(3));
+    obj x = GC_malloc(Mcontinuation_size(2));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = COND_CONT_TYPE;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_cond_ift(x) = ift;
     Mcontinuation_cond_iff(x) = iff;
+    return x;
+}
+
+obj Mseq_continuation(obj prev, obj seq) {
+    obj x = GC_malloc(Mcontinuation_size(1));
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = SEQ_CONT_TYPE;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_seq_value(x) = seq;
     return x;
 }

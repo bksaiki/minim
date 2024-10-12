@@ -61,11 +61,18 @@ loop:
         if (head == Mbegin_symbol) {
             // begin
             if (Mnullp(Mcdr(e))) {
-                // no expressions means void
+                // no expressions => void
                 x = Mvoid;
                 goto do_k;
+            } else if (Mnullp(Mcddr(e))) {
+                // one expressions => evaluate in tail position
+                e = Mcadr(e);
+                goto loop;
             } else {
-                minim_error1("eval_expr", "unimplemented", e);
+                // multiple expressions => last expression in tail position
+                k = Mseq_continuation(k, Mcddr(e));
+                e = Mcadr(e);
+                goto loop;
             }
         } else if (head == Mif_symbol) {
             // if
@@ -117,7 +124,7 @@ do_k:
         return x;
 
     case APP_CONT_TYPE:
-        // application
+        // applications
         if (Mcontinuation_app_tl(k)) {
             // evaluated at least the head
             //  `hd` the top of the val/arg list
@@ -145,6 +152,20 @@ do_k:
         // if expressions
         e = Mfalsep(x) ? Mcontinuation_cond_iff(k) : Mcontinuation_cond_ift(k);
         k = Mcontinuation_prev(k);
+        goto loop;
+
+    case SEQ_CONT_TYPE:
+        // begin expressions
+        x = Mcontinuation_seq_value(k);
+        if (Mnullp(Mcdr(x))) {
+            // evaluate last expression in tail position
+            k = Mcontinuation_prev(k);
+        } else {
+            // still evaluating sequence
+            Mcontinuation_seq_value(k) = Mcdr(x);
+        }
+
+        e = Mcar(x);
         goto loop;
 
     default:
