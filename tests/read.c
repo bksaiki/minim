@@ -56,6 +56,9 @@ void check_equal(const char *input, const char *expect) {
 int test_read_simple() {
     passed = 1;
 
+    check_equal("#t", "#t");
+    check_equal("#f", "#f");
+
     check_equal("0", "0");
     check_equal("1", "1");
     check_equal("123", "123");

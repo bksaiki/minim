@@ -10,6 +10,8 @@ obj Meof;
 
 obj Mbegin_symbol;
 obj Mif_symbol;
+obj Mlet_symbol;
+obj Mquote_symbol;
 
 intern_table *itab;
 
@@ -33,6 +35,8 @@ void minim_init(void) {
     // intern symbols
     Mbegin_symbol = Mintern("begin");
     Mif_symbol = Mintern("if");
+    Mlet_symbol = Mintern("let");
+    Mquote_symbol = Mintern("quote");
 
     // initialize primitives
     init_prims();

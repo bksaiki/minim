@@ -83,39 +83,43 @@ obj Minput_string_port(obj s) {
     return x;
 }
 
-obj Mnull_continuation(void) {
+obj Mnull_continuation(obj env) {
     obj x = GC_malloc(Mcontinuation_size(0));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = NULL_CONT_TYPE;
     Mcontinuation_prev(x) = Mnull;
+    Mcontinuation_env(x) = env;
     return x;
 }
 
-obj Mapp_continuation(obj prev, obj args) {
+obj Mapp_continuation(obj prev, obj env, obj args) {
     obj x = GC_malloc(Mcontinuation_size(2));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = APP_CONT_TYPE;
     Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
     Mcontinuation_app_hd(x) = args;
     Mcontinuation_app_tl(x) = NULL;
     return x;
 }
 
-obj Mcond_continuation(obj prev, obj ift, obj iff) {
+obj Mcond_continuation(obj prev, obj env, obj ift, obj iff) {
     obj x = GC_malloc(Mcontinuation_size(2));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = COND_CONT_TYPE;
     Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
     Mcontinuation_cond_ift(x) = ift;
     Mcontinuation_cond_iff(x) = iff;
     return x;
 }
 
-obj Mseq_continuation(obj prev, obj seq) {
+obj Mseq_continuation(obj prev, obj env, obj seq) {
     obj x = GC_malloc(Mcontinuation_size(1));
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SEQ_CONT_TYPE;
     Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
     Mcontinuation_seq_value(x) = seq;
     return x;
 }

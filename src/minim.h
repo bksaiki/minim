@@ -54,6 +54,8 @@ typedef void            *obj;
 
 extern obj Mbegin_symbol;
 extern obj Mif_symbol;
+extern obj Mlet_symbol;
+extern obj Mquote_symbol;
 
 // Object types
 
@@ -187,14 +189,16 @@ obj Mprim(void *fn, iptr arity, const char *name);
 // Continuation
 // +------------+
 // |    type    | [0, 1)
-// | cont_type  | [0, 2)
+// | cont_type  | [1, 2)
 // |    prev    | [8, 16)
+// |    env     | [16, 24)
 // |    ...     |
 // +------------+
-#define Mcontinuation_size(n)       ((n + 2) * ptr_size)
+#define Mcontinuation_size(n)       ((n + 3) * ptr_size)
 #define Mcontinuationp(o)           (obj_type(o) == CONTINUATON_OBJ_TYPE)
 #define Mcontinuation_type(o)       (*((byte*) ptr_add(o, 1)))
 #define Mcontinuation_prev(o)       (*((obj*) ptr_add(o, ptr_size)))
+#define Mcontinuation_env(o)        (*((obj*) ptr_add(o, 2 * ptr_size)))
 
 typedef enum {
     NULL_CONT_TYPE,
@@ -206,20 +210,20 @@ typedef enum {
 #define Mcontinuation_nullp(o)      (Mcontinuation_type(o) == NULL_CONT_TYPE)
 
 #define Mcontinuation_appp(o)       (Mcontinuation_type(o) == APP_CONT_TYPE)
-#define Mcontinuation_app_hd(o)     (*((obj*) ptr_add(o, 2 * ptr_size)))
-#define Mcontinuation_app_tl(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_app_hd(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_app_tl(o)     (*((obj*) ptr_add(o, 4 * ptr_size)))
 
 #define Mcontinuation_condp(o)          (Mcontinuation_type(o) == COND_CONT_TYPE)
-#define Mcontinuation_cond_ift(o)       (*((obj*) ptr_add(o, 2 * ptr_size)))
-#define Mcontinuation_cond_iff(o)       (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_cond_ift(o)       (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_cond_iff(o)       (*((obj*) ptr_add(o, 4 * ptr_size)))
 
 #define Mcontinuation_seqp(o)           (Mcontinuation_type(o) == SEQ_CONT_TYPE)
-#define Mcontinuation_seq_value(o)      (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mcontinuation_seq_value(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-obj Mnull_continuation(void);
-obj Mapp_continuation(obj prev, obj args);
-obj Mcond_continuation(obj prev, obj ift, obj iff);
-obj Mseq_continuation(obj prev, obj seq);
+obj Mnull_continuation(obj env);
+obj Mapp_continuation(obj prev, obj env, obj args);
+obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
+obj Mseq_continuation(obj prev, obj env, obj seq);
 
 // Port 
 // +------------+

@@ -70,25 +70,29 @@ loop:
                 goto loop;
             } else {
                 // multiple expressions => last expression in tail position
-                k = Mseq_continuation(k, Mcddr(e));
+                k = Mseq_continuation(k, env, Mcddr(e));
                 e = Mcadr(e);
                 goto loop;
             }
         } else if (head == Mif_symbol) {
             // if
-            k = Mcond_continuation(k, Mcaddr(e), Mcar(Mcdddr(e)));
+            k = Mcond_continuation(k, env, Mcaddr(e), Mcar(Mcdddr(e)));
             e = Mcadr(e);
             goto loop;
+        } else if (head == Mquote_symbol) {
+            // quote
+            x = Mcadr(e);
+            goto do_k;
         } else {
             // application
-            k = Mapp_continuation(k, e);
+            k = Mapp_continuation(k, env, e);
             e = Mcar(e);
             goto loop;
         }
     } else if (Msymbolp(e)) {
         // variable => lookup
         x = env_find(env, e);
-        if (Mnullp(x))
+        if (Mfalsep(x))
             minim_error1("eval_expr", "unbound identifier", e);
 
         x = Mcdr(x);
@@ -139,6 +143,7 @@ do_k:
             Mcontinuation_app_tl(k) = Mcontinuation_app_hd(k);
         }
 
+        env = Mcontinuation_env(k);
         if (Mnullp(Mcdr(Mcontinuation_app_tl(k)))) {
             // evaluated last argument
             goto do_app;
@@ -151,6 +156,7 @@ do_k:
     case COND_CONT_TYPE:
         // if expressions
         e = Mfalsep(x) ? Mcontinuation_cond_iff(k) : Mcontinuation_cond_ift(k);
+        env = Mcontinuation_env(k);
         k = Mcontinuation_prev(k);
         goto loop;
 
@@ -166,6 +172,7 @@ do_k:
         }
 
         e = Mcar(x);
+        env = Mcontinuation_env(k);
         goto loop;
 
     default:
@@ -178,5 +185,5 @@ do_k:
 }
 
 obj eval_expr(obj e, obj env) {
-    return eval_k(e, env, Mnull_continuation());
+    return eval_k(e, env, Mnull_continuation(env));
 }

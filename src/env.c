@@ -18,7 +18,7 @@ obj env_find(obj env, obj k) {
         }
     }
 
-    return Mnull;
+    return Mfalse;
 }
 
 void env_insert(obj env, obj k, obj v) {

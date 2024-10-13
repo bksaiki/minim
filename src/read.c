@@ -243,9 +243,6 @@ loop:
 
     skip_whitespace(ip);
     c = port_read(ip);
-    // no assertion: may actually be at end
-    // assert_not_eof(c);
-
     if (c == '#') {
         // special value
         c = port_peek(ip);
@@ -414,7 +411,7 @@ read_hex:
         return read_pair(ip, c);
     } else if (c == '\'') {
         // quoted expression
-        return Mcons(Mintern("quote"), Mcons(read_object(ip), Mnull));
+        return Mcons(Mquote_symbol, Mcons(read_object(ip), Mnull));
     } else if (symbol_charp(c) || ((c == '+' || c == '-') && delimeterp(port_peek(ip)))) {
         // symbol
         i = 1;

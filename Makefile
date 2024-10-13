@@ -32,8 +32,9 @@ clean:
 clean-all: clean
 	$(MAKE) -C $(GC_DIR) clean
 
-test: $(EXENAME) $(BUILD_DIR)/read
+test: $(BUILD_DIR)/read $(BUILD_DIR)/syntax
 	$(BUILD_DIR)/read
+	$(BUILD_DIR)/syntax
 
 $(EXENAME): $(BUILD_DIR) gc $(CONFIG) $(OBJS)
 	$(CC) $(CFLAGS) $(INCFLAGS) $(OBJS) $(ENTRY) $(LDFLAGS) -o $(EXENAME)
