@@ -94,7 +94,7 @@ static obj do_closure(obj f, obj args) {
 }
 
 static obj eval_k(obj e, obj env, obj k) {
-    obj x, hd;
+    obj x, hd, f, args;
 
 loop:
 
@@ -129,6 +129,11 @@ loop:
             // quote
             x = Mcadr(e);
             goto do_k;
+        } else if (hd == Mcallcc_symbol) {
+            // call/cc
+            k = Mcallcc_continuation(k, env);
+            e = Mcadr(e);
+            goto loop;
         } else {
             // application
             k = Mapp_continuation(k, env, e);
@@ -157,14 +162,13 @@ loop:
     minim_error1("eval_expr", "unreachable", e);
 
 do_app:
-    x = Mcar(Mcontinuation_app_hd(k));
-    if (Mprimp(x)) {
-        x = do_prim(x, Mcdr(Mcontinuation_app_hd(k)));
+    if (Mprimp(f)) {
+        x = do_prim(f, args);
         k = Mcontinuation_prev(k);
         goto do_k;
-    } else if (Mclosurep(x)) {
-        e = Mclosure_body(x);
-        env = do_closure(x, Mcdr(Mcontinuation_app_hd(k)));
+    } else if (Mclosurep(f)) {
+        e = Mclosure_body(f);
+        env = do_closure(f, args);
         k = Mcontinuation_prev(k);
         goto loop;
     } else {
@@ -196,6 +200,8 @@ do_k:
         env = Mcontinuation_env(k);
         if (Mnullp(Mcdr(Mcontinuation_app_tl(k)))) {
             // evaluated last argument
+            f = Mcar(Mcontinuation_app_hd(k));
+            args = Mcdr(Mcontinuation_app_hd(k));
             goto do_app;
         } else {
             // still evaluating arguments
@@ -261,6 +267,33 @@ do_k:
         x = Mvoid;
         k = Mcontinuation_prev(k);
         goto do_k;
+    
+    // call/cc expressions
+    case CALLCC_CONT_TYPE:
+        if (Mcontinuation_callcc_frozenp(k)) {
+            // exiting through the site of a captured continuation
+            minim_error1("call/cc", "unimplemented exit", x);
+        } else {
+            // entering a procedure for call/cc for the first time
+            if (Mprimp(x)) {
+                iptr arity = Mprim_arity(x);
+                if (arity < 0 ? arity == -1 : arity != 1)
+                    minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
+
+                x = do_prim(x, Mlist1(k));
+                goto do_k;
+            } else if (Mclosurep(x)) {
+                iptr arity = Mclosure_arity(x);
+                if (arity < 0 ? arity == -1 : arity != 1)
+                    minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
+                
+                Mcontinuation_callcc_frozenp(k) = 1;
+                env = do_closure(x, Mlist1(k));
+                goto loop;
+            } else {
+                minim_error1("call/cc", "expected a procedure", x);
+            }
+        }
 
     // unknown
     default:

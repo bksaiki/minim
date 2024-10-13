@@ -9,6 +9,7 @@ obj Mvoid;
 obj Meof;
 
 obj Mbegin_symbol;
+obj Mcallcc_symbol;
 obj Mif_symbol;
 obj Mlambda_symbol;
 obj Mlet_symbol;
@@ -36,6 +37,7 @@ void minim_init(void) {
 
     // intern symbols
     Mbegin_symbol = Mintern("begin");
+    Mcallcc_symbol = Mintern("call/cc");
     Mif_symbol = Mintern("if");
     Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");

@@ -68,6 +68,8 @@ obj expand_expr(obj e) {
             return Mlist3(Msetb_symbol, Mcadr(e), expand_expr(Mcaddr(e)));
         } else if (hd == Mquote_symbol) {
             return e;
+        } else if (hd == Mcallcc_symbol) {
+            return Mlist2(Mcallcc_symbol, expand_expr(Mcadr(e)));
         } else {
             hd = tl = Mcons(expand_expr(Mcar(e)), Mnull);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it)) {

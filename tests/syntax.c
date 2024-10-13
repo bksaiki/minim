@@ -139,6 +139,14 @@ int test_setb(void) {
     return passed;
 }
 
+int test_callcc(void) {
+    passed = 1;
+
+    check_equal("(call/cc (lambda (k) 1))", "1");
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -151,6 +159,7 @@ int main(int argc, char **argv) {
     log_test("let", test_let);
     log_test("lambda", test_lambda);
     log_test("set!", test_setb);
+    log_test("call/cc", test_callcc);
 
     minim_shutdown(0);
     GC_deinit();

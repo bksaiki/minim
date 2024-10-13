@@ -162,3 +162,13 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
     Mcontinuation_setb_name(x) = name;
     return x;
 }
+
+obj Mcallcc_continuation(obj prev, obj env) {
+    obj x = GC_malloc(Mcontinuation_seq_size);
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = CALLCC_CONT_TYPE;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
+    Mcontinuation_callcc_frozenp(x) = 0;
+    return x;
+}

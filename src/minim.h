@@ -53,6 +53,7 @@ typedef void            *obj;
 // Syntax
 
 extern obj Mbegin_symbol;
+extern obj Mcallcc_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
@@ -92,7 +93,6 @@ extern obj Meof;
 #define Mvoidp(x)   ((x) == Mvoid)
 #define Meofp(x)    ((x) == Meof)
 
-#define Mboolp(x)   (Mtruep(x) || Mfalsep(x))
 #define Mnot(x)     (Mfalsep(x) ? Mtrue : Mfalse)
 
 // Symbol
@@ -229,7 +229,8 @@ typedef enum {
     COND_CONT_TYPE,
     SEQ_CONT_TYPE,
     LET_CONT_TYPE,
-    SETB_CONT_TYPE
+    SETB_CONT_TYPE,
+    CALLCC_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_null_size     Mcontinuation_size(0)
@@ -258,12 +259,16 @@ typedef enum {
 #define Mcontinuation_setb_size         Mcontinuation_size(1)
 #define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
+#define Mcontinuation_callcc_size           Mcontinuation_size(1)
+#define Mcontinuation_callcc_frozenp(o)     (*((int*) ptr_add(o, 3 * ptr_size)))
+
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
 obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
+obj Mcallcc_continuation(obj prev, obj env);
 
 // Port 
 // +------------+
@@ -283,11 +288,6 @@ obj Msetb_continuation(obj prev, obj env, obj name);
 #define PORT_FLAG_READ      0x2
 #define PORT_FLAG_STR       0x4
 
-#define Minput_portp(o)     (Mportp(o) && (Mport_flags(o) & PORT_FLAG_READ))
-#define Moutput_portp(o)    (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_READ))
-#define Mfile_portp(o)      (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_STR))
-#define Mstring_portp(o)    (Mportp(o) && (Mport_flags(o) & PORT_FLAG_STR))
-
 obj Minput_file_port(FILE *f);
 obj Moutput_file_port(FILE *f);
 obj Minput_string_port(obj s);
@@ -296,6 +296,16 @@ int port_readyp(obj p);
 int port_peek(obj p);
 int port_read(obj p);
 void port_write(int c, obj p);
+
+// Composite predicates
+
+#define Mboolp(x)       (Mtruep(x) || Mfalsep(x))
+#define Mprocp(x)       (Mprimp(x) || Mclosurep(x))
+
+#define Minput_portp(o)     (Mportp(o) && (Mport_flags(o) & PORT_FLAG_READ))
+#define Moutput_portp(o)    (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_READ))
+#define Mfile_portp(o)      (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_STR))
+#define Mstring_portp(o)    (Mportp(o) && (Mport_flags(o) & PORT_FLAG_STR))
 
 // Environments
 

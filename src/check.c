@@ -140,6 +140,8 @@ void check_expr(obj e) {
             check_setb(e);
         } else if (hd == Mquote_symbol) {
             check_1ary_syntax(e);
+        } else if (hd == Mcallcc_symbol) {
+            check_1ary_syntax(e);
         } else if (Mlistp(e)) {
             for (it = e; !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
