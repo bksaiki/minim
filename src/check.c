@@ -60,13 +60,23 @@ static void check_setb(obj e) {
 // Does not check if each `<body>` is an expression.
 // Does not check if `<body> ...` forms a list.
 static void check_let(obj e) {
-    obj bindings, bind, id;
-    
-    bindings = Mcdr(e);
-    if (!Mconsp(bindings) || !Mconsp(Mcdr(bindings)))
+    obj rib, bindings, bind, id;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
         bad_syntax_exn(e);
-    
-    bindings = Mcar(bindings);
+
+    if (Msymbolp(Mcar(rib))) {
+        // named let
+        rib = Mcdr(rib);
+        if (!Mconsp(rib) || !Mconsp(Mcdr(rib)))
+            bad_syntax_exn(e);
+    } else {
+        if (!Mconsp(Mcdr(rib)))
+            bad_syntax_exn(e);
+    }
+
+    bindings = Mcar(rib);
     while (Mconsp(bindings)) {
         bind = Mcar(bindings);
         if (!Mconsp(bind))
@@ -92,15 +102,6 @@ static void check_let(obj e) {
 // Does not check if `<body> ...` forms a list.
 static void check_letrec(obj e) {
     obj rib, bindings, bind, id;
-
-    rib = Mcdr(e);
-    if (!Mconsp(rib))
-        bad_syntax_exn(e);
-
-    if (Msymbolp(Mcar(rib))) {
-        // named let
-        rib = Mcdr(rib);
-    }
     
     rib = Mcdr(e);
     if (!Mconsp(rib) || !Mconsp(Mcdr(rib)))
@@ -159,6 +160,11 @@ void check_expr(obj e) {
         hd = Mcar(e);
         if (hd == Mlet_symbol) {
             check_let(e);
+            if (Msymbolp(Mcadr(e))) {
+                // named let
+                e = Mcdr(e);
+            }
+
             for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcadar(it));
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
@@ -188,6 +194,7 @@ void check_expr(obj e) {
             check_1ary_syntax(e);
         } else if (hd == Mcallcc_symbol) {
             check_1ary_syntax(e);
+            check_expr(Mcadr(e));
         } else if (Mlistp(e)) {
             for (it = e; !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));

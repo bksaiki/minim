@@ -358,6 +358,7 @@ size_t hash_bytes(const void *data, size_t len);
 void init_prims(void);
 obj prim_env(obj env);
 
+obj nullp_proc(obj x);
 obj car_proc(obj x);
 obj cdr_proc(obj x);
 

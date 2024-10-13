@@ -25,6 +25,44 @@ static obj expand_let_expr(obj e) {
     return Mlist3(Mlet_symbol, hd, condense_body(Mcddr(e)));
 }
 
+// (let <name> ([<id> <expr>]) ...)
+//   <body>
+//   ...)
+// =>
+// (letrec ([<name> (lambda (<id> ...) <body ...)])
+//   (<name> <expr> ...))
+static obj expand_let_loop(obj e) {
+    obj it, formals, body, tl;
+
+    it = Mcaddr(e);
+    if (Mnullp(it)) {
+        // special case: no arguments
+        formals = Mnull;
+        body = Mlist1(Mcadr(e));
+    } else {
+        // at least one argument =>
+        // construct the lambda formals
+        formals = tl = Mcons(Mcaar(it), Mnull);
+        for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
+            Mcdr(tl) = Mcons(Mcaar(it), Mnull);
+            tl = Mcdr(tl);
+        }
+
+        // construct the body
+        body = tl = Mcons(Mcadr(e), Mnull);
+        for (it = Mcaddr(e); !Mnullp(it); it = Mcdr(it)) {
+            Mcdr(tl) = Mcons(Mcadar(it), Mnull);
+            tl = Mcdr(tl);
+        }
+    }
+
+    return Mlist3(
+        Mletrec_symbol,
+        Mlist1(Mlist2(Mcadr(e), Mcons(Mlambda_symbol, Mcons(formals, Mcdddr(e))))),
+        body
+    );
+}
+
 // (letrec ([<id> <expr>] ...)
 //   <body>
 //   ...)
@@ -66,7 +104,11 @@ loop:
     if (Mconsp(e)) {
         hd = Mcar(e);
         if (hd == Mlet_symbol) {
-            if (Mnullp(Mcadr(e))) {
+            if (Msymbolp(Mcadr(e))) {
+                // named let => convert to letrec
+                e = expand_let_loop(e);
+                goto loop;
+            } else if (Mnullp(Mcadr(e))) {
                 // empty bindings => just use body
                 return condense_body(Mcddr(e));
             } else {

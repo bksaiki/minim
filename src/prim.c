@@ -2,6 +2,7 @@
 
 #include "minim.h"
 
+static obj nullp_prim;
 static obj cons_prim;
 static obj car_prim;
 static obj cdr_prim;
@@ -20,6 +21,7 @@ static obj fx_gt_prim;
 static obj fx_lt_prim;
 
 void init_prims(void) {
+    nullp_prim = Mprim(nullp_proc, 1, "null?");
     cons_prim = Mprim(Mcons, 2, "cons");
     car_prim = Mprim(car_proc, 1, "car");
     cdr_prim = Mprim(cdr_proc, 1, "cdr");
@@ -43,6 +45,8 @@ void init_prims(void) {
 
 obj prim_env(obj env) {
     env = env_extend(env);
+
+    env_add_prim(env, nullp_prim);
     env_add_prim(env, car_prim);
     env_add_prim(env, cdr_prim);
     env_add_prim(env, cons_prim);
@@ -64,6 +68,10 @@ obj prim_env(obj env) {
 }
 
 // Wrapped primitives
+
+obj nullp_proc(obj x) {
+    return Mbool(Mnullp(x));
+}
 
 obj car_proc(obj x) {
     return Mcar(x);

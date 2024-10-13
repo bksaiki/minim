@@ -127,7 +127,9 @@ int test_letrec(void) {
 int test_let_loop(void) {
     passed = 1;
 
-    // check_equal("(let loop ([]")
+    check_equal("(let f () 1)", "1");
+    check_equal("(let f ([x 5]) (if (fx2<= x 0) #t (f (fx1- x))))", "#t");
+    check_equal("(let f ([x 5] [y 3]) (if (fx2<= x 0) y (f (fx1- x) (fx1+ y))))", "8");
 
     return passed;
 }
@@ -169,6 +171,24 @@ int test_callcc(void) {
     check_equal("(call/cc (lambda (k) 1))", "1");
     check_equal("(call/cc (lambda (k) (k 1) 2))", "1");
     check_equal("(let ([x #f]) (cons 1 (call/cc (lambda (k) (set! x k) 2))))", "(1 . 2)");
+
+    // from ChezScheme documentation
+    check_equal("(call/cc (lambda (k) (fx2* 5 (k 4))))", "4");
+    check_equal("(fx2+ 2 (call/cc (lambda (k) (fx2* 5 (k 4)))))", "6");
+    check_equal("(letrec ([product "
+                  "(lambda (xs) "
+                    "(call/cc "
+                      "(lambda (break) "
+                        "(if (null? xs) "
+                            "1 "
+                            "(if (fx2= (car xs) 0) "
+                                "(break 0) "
+                                "(fx2* (car xs) (product (cdr xs))))))))]) "
+                  "(product '(7 3 8 0 1 9 5)))",
+                "0");
+    check_equal("(let ([x (call/cc (lambda (k) k))]) "
+                  "(x (lambda (ignore) \"hi\")))",
+                "\"hi\"");
 
     return passed;
 }
