@@ -2,12 +2,9 @@
 
 #include "minim.h"
 
-obj car_proc(obj x) {
-    return Mcar(x);
-}
-
-obj cdr_proc(obj x) {
-    return Mcdr(x);
+int Mlistp(obj x) {
+    while (Mconsp(x)) x = Mcdr(x);
+    return Mnullp(x);
 }
 
 iptr list_length(obj x) {

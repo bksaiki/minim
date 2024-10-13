@@ -278,10 +278,8 @@ void env_insert(obj env, obj k, obj v);
 
 // List
 
+int Mlistp(obj x);
 iptr list_length(obj x);
-
-obj car_proc(obj x);
-obj cdr_proc(obj x);
 obj Mlength(obj x);
 
 // Hashing
@@ -293,8 +291,15 @@ size_t hash_bytes(const void *data, size_t len);
 void init_prims(void);
 obj prim_env(obj env);
 
+obj car_proc(obj x);
+obj cdr_proc(obj x);
+
 // Evaluation
 
+int Mimmediatep(obj x);
+
+void check_expr(obj e);
+obj expand_expr(obj e);
 obj eval_expr(obj e, obj env);
 
 // Reading

@@ -22,3 +22,14 @@ obj prim_env(obj env) {
     env_add_prim(env, cons_prim);
     return env;
 }
+
+// Wrapped primitives
+
+obj car_proc(obj x) {
+    return Mcar(x);
+}
+
+obj cdr_proc(obj x) {
+    return Mcdr(x);
+}
+

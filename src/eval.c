@@ -2,10 +2,12 @@
 
 #include "minim.h"
 
-static inline int Mimmediatep(obj x) {
+int Mimmediatep(obj x) {
     return Mtruep(x)
         || Mfalsep(x)
-        || Mfixnump(x);
+        || Mfixnump(x)
+        || Mcharp(x)
+        || Mstringp(x);
 }
 
 NORETURN void raise_arity_exn(obj prim, obj args) {
@@ -55,37 +57,20 @@ static obj eval_k(obj e, obj env, obj k) {
     obj x, hd;
 
 loop:
+
     if (Mconsp(e)) {
         // cons => syntax or application
         hd = Mcar(e);
         if (hd == Mlet_symbol) {
             // let
-            if (Mnullp(Mcadr(e))) {
-                // no bindings => evaluate the body in tail position
-                e = Mcons(Mbegin_symbol, Mcddr(e));
-                goto loop;
-            } else {
-                // at least one binding
-                k = Mlet_continuation(k, env, Mcadr(e), Mcons(Mbegin_symbol, Mcddr(e)));
-                e = Mcadar(Mcontinuation_let_bindings(k));
-                goto loop;   
-            }
+            k = Mlet_continuation(k, env, Mcadr(e), Mcaddr(e));
+            e = Mcadar(Mcontinuation_let_bindings(k));
+            goto loop;
         } else if (hd == Mbegin_symbol) {
             // begin
-            if (Mnullp(Mcdr(e))) {
-                // no expressions => void
-                x = Mvoid;
-                goto do_k;
-            } else if (Mnullp(Mcddr(e))) {
-                // one expressions => evaluate in tail position
-                e = Mcadr(e);
-                goto loop;
-            } else {
-                // multiple expressions => last expression in tail position
-                k = Mseq_continuation(k, env, Mcddr(e));
-                e = Mcadr(e);
-                goto loop;
-            }
+            k = Mseq_continuation(k, env, Mcddr(e));
+            e = Mcadr(e);
+            goto loop;
         } else if (hd == Mif_symbol) {
             // if
             k = Mcond_continuation(k, env, Mcaddr(e), Mcar(Mcdddr(e)));
@@ -220,5 +205,7 @@ do_k:
 }
 
 obj eval_expr(obj e, obj env) {
+    check_expr(e);
+    e = expand_expr(e);
     return eval_k(e, env, Mnull_continuation(env));
 }
