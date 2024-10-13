@@ -176,7 +176,7 @@ do_app:
         k = Mcontinuation_prev(k);
         goto loop;
     } else if (Mcontinuationp(f)) {
-        k = f;
+        k = continuation_restore(k, f);
         goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
@@ -268,45 +268,41 @@ do_k:
 
     // set! expressions
     case SETB_CONT_TYPE:
-        k = continuation_mutable(k);
         env = Mcontinuation_env(k);
+    
+        // update binding
         e = env_find(env, Mcontinuation_setb_name(k));
-        if (Mfalsep(x)) {
+        if (Mfalsep(e)) {
             minim_error1("set!", "unbound variable", Mcontinuation_setb_name(k));
-        } else if (Munboundp(x)) {
-            minim_error1("set!", "uninitialized variable", Mcontinuation_setb_name(k));   
+        } else {
+            Mcdr(e) = x;
         }
 
-        // update binding, result is void
-        Mcdr(e) = x;
+        // result is void
         x = Mvoid;
         k = Mcontinuation_prev(k);
         goto do_k;
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        // actually do call/cc
-        k = Mcontinuation_prev(k);
+        env = Mcontinuation_env(k);
         if (Mprimp(x)) {
             iptr arity = Mprim_arity(x);
             if (arity < 0 ? arity == -1 : arity != 1)
                 minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-
-            x = do_prim(x, Mlist1(k));
-            goto do_k;
         } else if (Mclosurep(x)) {
             iptr arity = Mclosure_arity(x);
             if (arity < 0 ? arity == -1 : arity != 1)
                 minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-
-            e = Mclosure_body(x);
-            env = do_closure(x, Mlist1(k));
-            goto loop;
         } else if (Mcontinuationp(x)) {
-            goto do_k;
+            // do nothing
         } else {
             minim_error1("call/cc", "expected a procedure", x);
         }
+
+        f = x;
+        args = Mlist1(Mcontinuation_prev(k));
+        goto do_app;
 
     // unknown
     default:

@@ -189,6 +189,13 @@ int test_callcc(void) {
     check_equal("(let ([x (call/cc (lambda (k) k))]) "
                   "(x (lambda (ignore) \"hi\")))",
                 "\"hi\"");
+    
+    check_equal("(letrec ([k* #f] "
+                         "[y (fx1+ (call/cc (lambda (k) (set! k* k) 0)))]) "
+                  "(if (fx2< y 5) "
+                      "(k* y) "
+                      "y))",
+                "5");
 
     return passed;
 }

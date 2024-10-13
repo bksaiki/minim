@@ -347,17 +347,17 @@ obj Mlength(obj x);
 // Marks a continuation chain as immutable.
 // Unwinding through an immutable continuation chain requires
 // copying each continuation as needed.
-void continuation_set_immutable(obj cc);
+void continuation_set_immutable(obj k);
 
 // Safely returns a mutable version of the current continuation.
 // If the continuation chain is immutable, a copy is made.
 // Otherwise, the argument is returned.
-obj continuation_mutable(obj x);
+obj continuation_mutable(obj k);
 
 // Restores a continuation.
 // The result is a new continuation chain formed by merging
 // the common ancestors of the continuation and current continuation.
-
+obj continuation_restore(obj cc, obj k);
 
 // For debugging
 void print_continuation(obj cc);
