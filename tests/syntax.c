@@ -124,6 +124,14 @@ int test_letrec(void) {
     return passed;
 }
 
+int test_let_loop(void) {
+    passed = 1;
+
+    // check_equal("(let loop ([]")
+
+    return passed;
+}
+
 int test_lambda(void) {
     passed = 1;
 
@@ -176,6 +184,7 @@ int main(int argc, char **argv) {
     log_test("begin", test_begin);
     log_test("let", test_let);
     log_test("letrec", test_letrec);
+    log_test("let (loop)", test_let_loop);
     log_test("lambda", test_lambda);
     log_test("set!", test_setb);
     log_test("call/cc", test_callcc);

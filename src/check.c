@@ -56,7 +56,7 @@ static void check_setb(obj e) {
 }
 
 // Already assumes `expr` is `(let . <???>)`
-// Check: `expr` must be `(let-values ([(<var> ...) <val>] ...) <body> ...)`
+// Check: `expr` must be `(let ([<var> <val>] ...) <body> ...)`
 // Does not check if each `<body>` is an expression.
 // Does not check if `<body> ...` forms a list.
 static void check_let(obj e) {
@@ -67,6 +67,46 @@ static void check_let(obj e) {
         bad_syntax_exn(e);
     
     bindings = Mcar(bindings);
+    while (Mconsp(bindings)) {
+        bind = Mcar(bindings);
+        if (!Mconsp(bind))
+            bad_syntax_exn(e);
+
+        id = Mcar(bind);
+        assert_identifier(e, id);
+
+        bind = Mcdr(bind);
+        if (!Mconsp(bind) || !Mnullp(Mcdr(bind)))
+            bad_syntax_exn(e);
+
+        bindings = Mcdr(bindings);
+    }
+
+    if (!Mnullp(bindings))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(letrec . <???>)`
+// Check: `expr` must be `(letrec ([<var> <val>] ...) <body> ...)`
+// Does not check if each `<body>` is an expression.
+// Does not check if `<body> ...` forms a list.
+static void check_letrec(obj e) {
+    obj rib, bindings, bind, id;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    if (Msymbolp(Mcar(rib))) {
+        // named let
+        rib = Mcdr(rib);
+    }
+    
+    rib = Mcdr(e);
+    if (!Mconsp(rib) || !Mconsp(Mcdr(rib)))
+        bad_syntax_exn(e);
+    
+    bindings = Mcar(rib);
     while (Mconsp(bindings)) {
         bind = Mcar(bindings);
         if (!Mconsp(bind))
@@ -124,7 +164,7 @@ void check_expr(obj e) {
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
         } else if (hd == Mletrec_symbol) {
-            check_let(e);
+            check_letrec(e);
             for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcadar(it));
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))

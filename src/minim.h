@@ -96,7 +96,8 @@ extern obj Munbound;
 #define Meofp(x)        ((x) == Meof)
 #define Munboundp(x)    ((x) == Munbound)
 
-#define Mnot(x)     (Mfalsep(x) ? Mtrue : Mfalse)
+#define Mnot(x)         (Mfalsep(x) ? Mtrue : Mfalse)
+#define Mbool(x)        (((x) == 0) ? Mfalse : Mtrue)
 
 // Symbol
 // +------------+
@@ -316,6 +317,23 @@ obj empty_env(void);
 obj env_extend(obj env);
 obj env_find(obj env, obj k);
 void env_insert(obj env, obj k, obj v);
+
+// Fixnums
+
+obj Mfx_neg(obj x);
+obj Mfx_inc(obj x);
+obj Mfx_dec(obj x);
+
+obj Mfx_add(obj x, obj y);
+obj Mfx_sub(obj x, obj y);
+obj Mfx_mul(obj x, obj y);
+obj Mfx_div(obj x, obj y);
+
+obj Mfx_eq(obj x, obj y);
+obj Mfx_ge(obj x, obj y);
+obj Mfx_le(obj x, obj y);
+obj Mfx_gt(obj x, obj y);
+obj Mfx_lt(obj x, obj y);
 
 // List
 
