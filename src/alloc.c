@@ -152,3 +152,13 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body) {
     Mcontinuation_let_body(x) = body;
     return x;   
 }
+
+obj Msetb_continuation(obj prev, obj env, obj name) {
+    obj x = GC_malloc(Mcontinuation_seq_size);
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = SETB_CONT_TYPE;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
+    Mcontinuation_setb_name(x) = name;
+    return x;
+}

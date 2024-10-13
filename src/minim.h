@@ -57,6 +57,7 @@ extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
 extern obj Mquote_symbol;
+extern obj Msetb_symbol;
 
 // Object types
 
@@ -227,7 +228,8 @@ typedef enum {
     APP_CONT_TYPE,
     COND_CONT_TYPE,
     SEQ_CONT_TYPE,
-    LET_CONT_TYPE
+    LET_CONT_TYPE,
+    SETB_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_null_size     Mcontinuation_size(0)
@@ -253,11 +255,15 @@ typedef enum {
 #define Mcontinuation_let_bindings(o)   (*((obj*) ptr_add(o, 4 * ptr_size)))
 #define Mcontinuation_let_body(o)       (*((obj*) ptr_add(o, 5 * ptr_size)))
 
+#define Mcontinuation_setb_size         Mcontinuation_size(1)
+#define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
+
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
 obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
+obj Msetb_continuation(obj prev, obj env, obj name);
 
 // Port 
 // +------------+

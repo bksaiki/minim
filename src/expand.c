@@ -5,10 +5,10 @@
 static obj condense_body(obj es) {
     if (Mnullp(Mcdr(es))) {
         // single expression => just use expression
-        return Mcar(es);
+        return expand_expr(Mcar(es));
     } else {
         // multiple expressions => wrap in begin
-        return Mcons(Mbegin_symbol, es);
+        return expand_expr(Mcons(Mbegin_symbol, es));
     }
 }
 
@@ -64,6 +64,8 @@ obj expand_expr(obj e) {
             );
         } else if (hd == Mlambda_symbol) {
             return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
+        } else if (hd == Msetb_symbol) {
+            return Mlist3(Msetb_symbol, Mcadr(e), expand_expr(Mcaddr(e)));
         } else if (hd == Mquote_symbol) {
             return e;
         } else {

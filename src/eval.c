@@ -120,6 +120,11 @@ loop:
             // lambda
             x = Mclosure(env, Mcadr(e), Mcaddr(e));
             goto do_k;
+        } else if (hd == Msetb_symbol) {
+            // set!
+            k = Msetb_continuation(k, env, Mcadr(e));
+            e = Mcaddr(e);
+            goto loop;
         } else if (hd == Mquote_symbol) {
             // quote
             x = Mcadr(e);
@@ -242,6 +247,20 @@ do_k:
         }
 
         goto loop;
+
+    // set! expressions
+    case SETB_CONT_TYPE:
+        env = Mcontinuation_env(k);
+        e = env_find(env, Mcontinuation_setb_name(k));
+        if (Mfalsep(e)) {
+            minim_error1("set!", "unbound variable", Mcontinuation_setb_name(k));
+        }
+
+        // update binding, result is void
+        Mcdr(e) = x;
+        x = Mvoid;
+        k = Mcontinuation_prev(k);
+        goto do_k;
 
     // unknown
     default:

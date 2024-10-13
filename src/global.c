@@ -13,6 +13,7 @@ obj Mif_symbol;
 obj Mlambda_symbol;
 obj Mlet_symbol;
 obj Mquote_symbol;
+obj Msetb_symbol;
 
 intern_table *itab;
 
@@ -39,6 +40,7 @@ void minim_init(void) {
     Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");
     Mquote_symbol = Mintern("quote");
+    Msetb_symbol = Mintern("set!");
 
     // initialize primitives
     init_prims();

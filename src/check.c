@@ -38,6 +38,23 @@ static void check_3ary_syntax(obj e) {
         bad_syntax_exn(e);
 }
 
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr must be `(<name> <symbol> <datum>)`
+static void check_setb(obj e) {
+    obj rib;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib) || !Msymbolp(Mcar(rib)))
+        bad_syntax_exn(e);
+
+    rib = Mcdr(rib);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    if (!Mnullp(Mcdr(rib)))
+        bad_syntax_exn(e);
+}
+
 // Already assumes `expr` is `(let . <???>)`
 // Check: `expr` must be `(let-values ([(<var> ...) <val>] ...) <body> ...)`
 // Does not check if each `<body>` is an expression.
@@ -119,6 +136,8 @@ void check_expr(obj e) {
             check_lambda(e);
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
+        } else if (hd == Msetb_symbol) {
+            check_setb(e);
         } else if (hd == Mquote_symbol) {
             check_1ary_syntax(e);
         } else if (Mlistp(e)) {

@@ -128,6 +128,17 @@ int test_lambda(void) {
     return passed;
 }
 
+int test_setb(void) {
+    passed = 1;
+
+    check_equal("(let ([x 1]) (set! x 2) x)", "2");
+    check_equal("(let ([x 1] [y 2]) (set! x 2) (set! y 3) (cons x y))", "(2 . 3)");
+    check_equal("(let ([x 1]) ((lambda () (set! x 2))) x) ", "2");
+    check_equal("(let ([x 1]) ((lambda (y) (set! x 2) (cons x y)) x)) ", "(2 . 1)");
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -139,6 +150,7 @@ int main(int argc, char **argv) {
     log_test("begin", test_begin);
     log_test("let", test_let);
     log_test("lambda", test_lambda);
+    log_test("set!", test_setb);
 
     minim_shutdown(0);
     GC_deinit();
