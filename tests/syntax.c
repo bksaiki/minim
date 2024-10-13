@@ -108,6 +108,22 @@ int test_let(void) {
     return passed;
 }
 
+int test_letrec(void) {
+    passed = 1;
+
+    check_equal("(letrec () 1)", "1");
+    check_equal("(letrec ([x 1]) x)", "1");
+    check_equal("(letrec ([x 1] [y 2]) y)", "2");
+    check_equal("(letrec ([x 1] [y 2] [z 3]) (cons x (cons y z)))", "(1 2 . 3)");
+
+    check_equal("(letrec ([x 1] [y x]) y)", "1");
+    check_equal("(letrec ([f (lambda () f)]) (f))", "#<procedure>");
+    check_equal("(letrec ([f (lambda () f)] [g (lambda () f)]) (g))", "#<procedure>");
+    check_equal("(letrec ([f (lambda () g)] [g (lambda () f)]) (g))", "#<procedure>");
+
+    return passed;
+}
+
 int test_lambda(void) {
     passed = 1;
 
@@ -159,6 +175,7 @@ int main(int argc, char **argv) {
     log_test("if", test_if);
     log_test("begin", test_begin);
     log_test("let", test_let);
+    log_test("letrec", test_letrec);
     log_test("lambda", test_lambda);
     log_test("set!", test_setb);
     log_test("call/cc", test_callcc);

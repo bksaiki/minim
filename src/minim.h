@@ -57,6 +57,7 @@ extern obj Mcallcc_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
+extern obj Mletrec_symbol;
 extern obj Mquote_symbol;
 extern obj Msetb_symbol;
 
@@ -86,12 +87,14 @@ extern obj Mtrue;
 extern obj Mfalse;
 extern obj Mvoid;
 extern obj Meof;
+extern obj Munbound;
 
-#define Mnullp(x)   ((x) == Mnull)
-#define Mtruep(x)   ((x) == Mtrue)
-#define Mfalsep(x)  ((x) == Mfalse)
-#define Mvoidp(x)   ((x) == Mvoid)
-#define Meofp(x)    ((x) == Meof)
+#define Mnullp(x)       ((x) == Mnull)
+#define Mtruep(x)       ((x) == Mtrue)
+#define Mfalsep(x)      ((x) == Mfalse)
+#define Mvoidp(x)       ((x) == Mvoid)
+#define Meofp(x)        ((x) == Meof)
+#define Munboundp(x)    ((x) == Munbound)
 
 #define Mnot(x)     (Mfalsep(x) ? Mtrue : Mfalse)
 

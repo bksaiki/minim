@@ -123,6 +123,12 @@ void check_expr(obj e) {
                 check_expr(Mcadar(it));
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
+        } else if (hd == Mletrec_symbol) {
+            check_let(e);
+            for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcadar(it));
+            for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
         } else if (hd == Mbegin_symbol) {
             check_begin(e);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))

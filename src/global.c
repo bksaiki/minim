@@ -7,12 +7,14 @@ obj Mtrue;
 obj Mfalse;
 obj Mvoid;
 obj Meof;
+obj Munbound;
 
 obj Mbegin_symbol;
 obj Mcallcc_symbol;
 obj Mif_symbol;
 obj Mlambda_symbol;
 obj Mlet_symbol;
+obj Mletrec_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
 
@@ -30,6 +32,8 @@ void minim_init(void) {
     obj_type(Mvoid) = SPECIAL_OBJ_TYPE;
     Meof = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Meof) = SPECIAL_OBJ_TYPE;
+    Munbound = GC_malloc_uncollectable(sizeof(byte));
+    obj_type(Munbound) = SPECIAL_OBJ_TYPE;
 
     // intern table
     itab = make_intern_table();
@@ -41,6 +45,7 @@ void minim_init(void) {
     Mif_symbol = Mintern("if");
     Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");
+    Mletrec_symbol = Mintern("letrec");
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
 

@@ -49,6 +49,8 @@ void write_obj(FILE *out, obj o) {
         fputs("#<void>", out);
     } else if (Meofp(o)) {
         fputs("#<eof>", out);
+    } else if (Munboundp(o)) {
+        fputs("#<unbound>", out);
     } else if (Msymbolp(o)) {
         fputs(Msymbol_value(o), out);
     } else if (Mfixnump(o)) {

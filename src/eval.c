@@ -143,8 +143,11 @@ loop:
     } else if (Msymbolp(e)) {
         // variable => lookup
         x = env_find(env, e);
-        if (Mfalsep(x))
-            minim_error1("eval_expr", "unbound identifier", e);
+        if (Mfalsep(x)) {
+            minim_error(Msymbol_value(e), "unbound identifier");
+        } else if (Munboundp(x)) {
+            minim_error(Msymbol_value(e), "uninitialized identifier");
+        }
 
         x = Mcdr(x);
         goto do_k;
@@ -261,8 +264,10 @@ do_k:
     case SETB_CONT_TYPE:
         env = Mcontinuation_env(k);
         e = env_find(env, Mcontinuation_setb_name(k));
-        if (Mfalsep(e)) {
+        if (Mfalsep(x)) {
             minim_error1("set!", "unbound variable", Mcontinuation_setb_name(k));
+        } else if (Munboundp(x)) {
+            minim_error1("set!", "uninitialized variable", Mcontinuation_setb_name(k));   
         }
 
         // update binding, result is void

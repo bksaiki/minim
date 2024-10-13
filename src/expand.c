@@ -25,8 +25,43 @@ static obj expand_let_expr(obj e) {
     return Mlist3(Mlet_symbol, hd, condense_body(Mcddr(e)));
 }
 
+// (letrec ([<id> <expr>] ...)
+//   <body>
+//   ...)
+// =>
+// (let ([<id> #<unbound>] ...)
+//   (set! <id> <expr>)
+//   ...
+//   <body>
+//   ...)
+static obj expand_letrec_expr(obj e) {
+    obj it, binds, body, tl;
+
+    // create the initial bindings
+    it = Mcadr(e);
+    binds = tl = Mcons(Mlist2(Mcaar(it), Mlist2(Mquote_symbol, Munbound)), Mnull);
+    for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
+        Mcdr(tl) = Mcons(Mlist2(Mcaar(it), Mlist2(Mquote_symbol, Munbound)), Mnull);
+        tl = Mcdr(tl);
+    }
+
+    // create the body with set! expressions
+    it = Mcadr(e);
+    body = tl = Mcons(Mlist3(Msetb_symbol, Mcaar(it), Mcadar(it)), Mnull);
+    for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
+        Mcdr(tl) = Mcons(Mlist3(Msetb_symbol, Mcaar(it), Mcadar(it)), Mnull);
+        tl = Mcdr(tl);
+    }
+
+    Mcdr(tl) = Mcddr(e);
+    return Mcons(Mlet_symbol, Mcons(binds, body));
+}
+
+
 obj expand_expr(obj e) {
     obj hd, tl, it;
+
+loop:
 
     if (Mconsp(e)) {
         hd = Mcar(e);
@@ -38,13 +73,24 @@ obj expand_expr(obj e) {
                 // at least one binding
                 return expand_let_expr(e);
             }
+        } else if (hd == Mletrec_symbol) {
+            // letrec => transforms to let
+            if (Mnullp(Mcadr(e))) {
+                // empty bindings => just use body
+                return condense_body(Mcddr(e));
+            } else {
+                // at least one binding
+                e = expand_letrec_expr(e);
+                goto loop;
+            }
         } else if (hd == Mbegin_symbol) {
             if (Mnullp(Mcdr(e))) {
                 // no body expression
                 return Mlist2(Mquote_symbol, Mvoid);
             } else if (Mnullp(Mcddr(e))) {
                 // one body expression
-                return expand_expr(Mcadr(e));
+                e = Mcadr(e);
+                goto loop;
             } else {
                 // multiple body expressions
                 hd = tl = Mcons(Mbegin_symbol, Mnull);
@@ -83,6 +129,6 @@ obj expand_expr(obj e) {
         // immediate or variable
         return e;
     } else {
-        minim_error1(NULL, "unreachable", e);
+        minim_error1("expand_expr", "unreachable", e);
     }
 }
