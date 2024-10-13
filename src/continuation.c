@@ -140,14 +140,13 @@ obj continuation_restore(obj cc, obj k) {
         // `tl` is `k` so just return it
         return tl;
     } else {
-        // found a common ancestor, reinstate `k` up to that point
-        // we can assume that `tl` is immutable since `k`
-        // must be captured by `call/cc` (and variants)
+        // found a common tail, reinstate `k` up to that point
+        // we can assume that `tl` is immutable since `k` must be
+        // captured by `call/cc` (and variants)
         if (!Mcontinuation_immutablep(tl))
             minim_error1("continuation_restore", "must be immutable", tl);
 
-        // walk back to the ancestor and track the frames
-        // must be at least one
+        // walk back to the common tail and track the frames (must be >=1)
         re = Mcons(continuation_mutable(k), Mnull);
         for (k = Mcontinuation_prev(k); k != tl; k = Mcontinuation_prev(k)) {
             re = Mcons(continuation_mutable(k), re);
