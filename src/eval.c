@@ -171,6 +171,9 @@ do_app:
         env = do_closure(f, args);
         k = Mcontinuation_prev(k);
         goto loop;
+    } else if (Mcontinuationp(f)) {
+        k = f;
+        goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
     }
@@ -272,7 +275,8 @@ do_k:
     case CALLCC_CONT_TYPE:
         if (Mcontinuation_callcc_frozenp(k)) {
             // exiting through the site of a captured continuation
-            minim_error1("call/cc", "unimplemented exit", x);
+            k = continuation_restore(Mcontinuation_prev(k));
+            goto do_k;
         } else {
             // entering a procedure for call/cc for the first time
             if (Mprimp(x)) {
@@ -289,7 +293,10 @@ do_k:
                 
                 Mcontinuation_callcc_frozenp(k) = 1;
                 env = do_closure(x, Mlist1(k));
+                e = Mclosure_body(x);
                 goto loop;
+            } else if (Mcontinuationp(x)) {
+                goto do_k;
             } else {
                 minim_error1("call/cc", "expected a procedure", x);
             }
@@ -297,11 +304,7 @@ do_k:
 
     // unknown
     default:
-        minim_error1(
-            "eval_expr",
-            "unimplemented continuation",
-            Mfixnum(Mcontinuation_type(k))
-        );
+        minim_error1("eval_expr", "unimplemented", Mfixnum(Mcontinuation_type(k)));
     }
 }
 

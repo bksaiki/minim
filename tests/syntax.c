@@ -143,6 +143,8 @@ int test_callcc(void) {
     passed = 1;
 
     check_equal("(call/cc (lambda (k) 1))", "1");
+    check_equal("(call/cc (lambda (k) (k 1) 2))", "1");
+    check_equal("(let ([x #f]) (cons 1 (call/cc (lambda (k) (set! x k) 2))))", "(1 . 2)");
 
     return passed;
 }

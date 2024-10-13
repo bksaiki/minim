@@ -320,6 +320,14 @@ int Mlistp(obj x);
 iptr list_length(obj x);
 obj Mlength(obj x);
 
+// Continuations
+
+// Restores a (frozen) continuation chain.
+// A continuation chain is frozen when the top-most continuation
+// is created by `call/cc`. For safety, the chain is made immutable.
+// When exiting through it, we must make a copy.
+obj continuation_restore(obj cc);
+
 // Hashing
 
 size_t hash_bytes(const void *data, size_t len);
