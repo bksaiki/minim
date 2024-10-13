@@ -108,6 +108,26 @@ int test_let(void) {
     return passed;
 }
 
+int test_lambda(void) {
+    passed = 1;
+
+    check_equal("(lambda () 1)", "#<procedure>");
+    check_equal("(lambda xs xs)", "#<procedure>");
+    check_equal("(lambda (x) x)", "#<procedure>");
+    check_equal("(lambda (x y z) (cons x z))", "#<procedure>");
+    check_equal("(lambda (x y . zs) (cons x zs))", "#<procedure>");
+
+    check_equal("((lambda () 1))", "1");
+    check_equal("((lambda xs xs))", "()");
+    check_equal("((lambda (x) x) 1)", "1");
+    check_equal("((lambda (x y z) (cons x z)) 1 2 3)", "(1 . 3)");
+    check_equal("((lambda (x y . zs) (cons x zs)) 1 2)", "(1)");
+    check_equal("((lambda (x y . zs) (cons x zs)) 1 2 3)", "(1 3)");
+    check_equal("((lambda (x y . zs) (cons x zs)) 1 2 3 4 5)", "(1 3 4 5)");
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -117,7 +137,8 @@ int main(int argc, char **argv) {
     log_test("quote", test_quote);
     log_test("if", test_if);
     log_test("begin", test_begin);
-    log_test("let", test_let);    
+    log_test("let", test_let);
+    log_test("lambda", test_lambda);
 
     minim_shutdown(0);
     GC_deinit();

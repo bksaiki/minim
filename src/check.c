@@ -82,6 +82,19 @@ static void check_begin(obj e) {
         bad_syntax_exn(e);
 }
 
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> ...)`
+static void check_lambda(obj e) {
+    obj args = Mcadr(e);
+    for (; Mconsp(args); args = Mcdr(args)) {
+        assert_identifier(e, Mcar(args));
+    }
+
+    if (!Mnullp(args)) {
+        assert_identifier(e, args);
+    }
+}
+
 void check_expr(obj e) {
     obj hd, it;
 
@@ -96,12 +109,16 @@ void check_expr(obj e) {
         } else if (hd == Mbegin_symbol) {
             check_begin(e);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))
-                check_expr(Mcar(e));
+                check_expr(Mcar(it));
         } else if (hd == Mif_symbol) {
             check_3ary_syntax(e);
             check_expr(Mcadr(e));
             check_expr(Mcaddr(e));
             check_expr(Mcar(Mcdddr(e)));
+        } else if (hd == Mlambda_symbol) {
+            check_lambda(e);
+            for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
         } else if (hd == Mquote_symbol) {
             check_1ary_syntax(e);
         } else if (Mlistp(e)) {

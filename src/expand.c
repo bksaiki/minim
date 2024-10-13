@@ -62,6 +62,8 @@ obj expand_expr(obj e) {
                 expand_expr(Mcaddr(e)),
                 expand_expr(Mcar(Mcdddr(e)))
             );
+        } else if (hd == Mlambda_symbol) {
+            return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
         } else if (hd == Mquote_symbol) {
             return e;
         } else {

@@ -56,6 +56,23 @@ obj Mprim(void *fn, iptr arity, const char *name) {
     return x;
 }
 
+obj Mclosure(obj env, obj formals, obj body) {
+    obj x;
+    iptr arity;
+    
+    x = GC_malloc(Mclosure_size);
+    obj_type(x) = CLOSURE_OBJ_TYPE;
+    Mclosure_env(x) = env;
+    Mclosure_body(x) = body;
+    Mclosure_formals(x) = formals;
+    Mclosure_name(x) = Mfalse;
+
+    for (arity = 0; Mconsp(formals); formals = Mcdr(formals), ++arity);
+    Mclosure_arity(x) = Mnullp(formals) ? arity : (-arity - 1);
+
+    return x;
+}
+
 obj Minput_file_port(FILE *f) {
     obj x = GC_malloc(Mport_size);
     obj_type(x) = PORT_OBJ_TYPE;

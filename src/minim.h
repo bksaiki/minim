@@ -54,6 +54,7 @@ typedef void            *obj;
 
 extern obj Mbegin_symbol;
 extern obj Mif_symbol;
+extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
 extern obj Mquote_symbol;
 
@@ -67,6 +68,7 @@ typedef enum {
     STRING_OBJ_TYPE,
     CONS_OBJ_TYPE,
     PRIM_OBJ_TYPE,
+    CLOSURE_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
     PORT_OBJ_TYPE
 } obj_type_t;
@@ -174,7 +176,7 @@ obj Mcons(obj car, obj cdr);
 // Primitive
 // +------------+
 // |    type    | [0, 1)
-// |     fn     | [8, 16)
+// |    fn      | [8, 16)
 // |    arity   | [16, 24)
 // |    name    | [24, 32)
 // +------------+
@@ -185,6 +187,26 @@ obj Mcons(obj car, obj cdr);
 #define Mprim_name(o)       (*((obj *) ptr_add(o, 3 * ptr_size)))
 
 obj Mprim(void *fn, iptr arity, const char *name);
+
+// Closure
+// +------------+
+// |    type    | [0, 1)
+// |    env     | [8, 16)
+// |    code    | [16, 24)
+// |   formals  | [24, 32)
+// |    arity   | [32, 40)
+// |    name    | [40, 48)
+// +------------+
+
+#define Mclosure_size           (6 * ptr_size)
+#define Mclosurep(o)            (obj_type(o) == CLOSURE_OBJ_TYPE)
+#define Mclosure_env(o)         (*((obj *) ptr_add(o, ptr_size)))
+#define Mclosure_body(o)        (*((obj *) ptr_add(o, 2 * ptr_size)))
+#define Mclosure_formals(o)     (*((obj *) ptr_add(o, 3 * ptr_size)))
+#define Mclosure_arity(o)       (*((iptr*) ptr_add(o, 4 * ptr_size)))
+#define Mclosure_name(o)        (*((obj*) ptr_add(o, 5 * ptr_size)))
+
+obj Mclosure(obj env, obj formals, obj body);
 
 // Continuation
 // +------------+

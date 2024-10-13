@@ -10,6 +10,7 @@ obj Meof;
 
 obj Mbegin_symbol;
 obj Mif_symbol;
+obj Mlambda_symbol;
 obj Mlet_symbol;
 obj Mquote_symbol;
 
@@ -35,6 +36,7 @@ void minim_init(void) {
     // intern symbols
     Mbegin_symbol = Mintern("begin");
     Mif_symbol = Mintern("if");
+    Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");
     Mquote_symbol = Mintern("quote");
 

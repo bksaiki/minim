@@ -63,6 +63,14 @@ void write_obj(FILE *out, obj o) {
         fputs("#<procedure:", out);
         write_obj(out, Mprim_name(o));
         fputc('>', out);
+    } else if (Mclosurep(o)) {
+        if (Mfalsep(Mclosure_name(o))) {
+            fputs("#<procedure>", out);
+        } else {
+            fputs("#<procedure:", out);
+            write_obj(out, Mclosure_name(o));
+            fputc('>', out);
+        }
     } else if (Minput_portp(o)) {
         fputs("#<input-port>", out);
     } else if (Moutput_portp(o)) {

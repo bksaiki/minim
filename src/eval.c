@@ -53,6 +53,46 @@ static obj do_prim(obj f, obj args) {
     }
 }
 
+static obj do_closure(obj f, obj args) {
+    obj env, it;
+    iptr arity, argc;
+
+    arity = Mclosure_arity(f);
+    argc = list_length(args);
+    if (arity < 0) {
+        arity = -arity - 1;
+        if (argc < arity) {
+            minim_error2(
+                Mclosure_name(f),
+                "arity mismatch",
+                Mlist2(Mintern("at-least"), Mfixnum(arity)),
+                Mfixnum(argc)
+            );
+        }
+    } else if (arity != argc) {
+        minim_error2(
+            Mclosure_name(f),
+            "arity mismatch",
+            Mfixnum(arity),
+            Mfixnum(argc)
+        );
+    }
+
+    env = env_extend(Mclosure_env(f));
+    it = Mclosure_formals(f);
+    while (Mconsp(it)) {
+        env_insert(env, Mcar(it), Mcar(args));
+        args = Mcdr(args);
+        it = Mcdr(it);
+    }
+
+    if (!Mnullp(it)) {
+        env_insert(env, it, args);
+    }
+
+    return env;
+}
+
 static obj eval_k(obj e, obj env, obj k) {
     obj x, hd;
 
@@ -76,6 +116,10 @@ loop:
             k = Mcond_continuation(k, env, Mcaddr(e), Mcar(Mcdddr(e)));
             e = Mcadr(e);
             goto loop;
+        } else if (hd == Mlambda_symbol) {
+            // lambda
+            x = Mclosure(env, Mcadr(e), Mcaddr(e));
+            goto do_k;
         } else if (hd == Mquote_symbol) {
             // quote
             x = Mcadr(e);
@@ -113,6 +157,11 @@ do_app:
         x = do_prim(x, Mcdr(Mcontinuation_app_hd(k)));
         k = Mcontinuation_prev(k);
         goto do_k;
+    } else if (Mclosurep(x)) {
+        e = Mclosure_body(x);
+        env = do_closure(x, Mcdr(Mcontinuation_app_hd(k)));
+        k = Mcontinuation_prev(k);
+        goto loop;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
     }
