@@ -52,13 +52,25 @@ static obj do_prim(obj f, obj args) {
 }
 
 static obj eval_k(obj e, obj env, obj k) {
-    obj x;
+    obj x, hd;
 
 loop:
     if (Mconsp(e)) {
         // cons => syntax or application
-        obj head = Mcar(e);
-        if (head == Mbegin_symbol) {
+        hd = Mcar(e);
+        if (hd == Mlet_symbol) {
+            // let
+            if (Mnullp(Mcadr(e))) {
+                // no bindings => evaluate the body in tail position
+                e = Mcons(Mbegin_symbol, Mcddr(e));
+                goto loop;
+            } else {
+                // at least one binding
+                k = Mlet_continuation(k, env, Mcadr(e), Mcons(Mbegin_symbol, Mcddr(e)));
+                e = Mcadar(Mcontinuation_let_bindings(k));
+                goto loop;   
+            }
+        } else if (hd == Mbegin_symbol) {
             // begin
             if (Mnullp(Mcdr(e))) {
                 // no expressions => void
@@ -74,12 +86,12 @@ loop:
                 e = Mcadr(e);
                 goto loop;
             }
-        } else if (head == Mif_symbol) {
+        } else if (hd == Mif_symbol) {
             // if
             k = Mcond_continuation(k, env, Mcaddr(e), Mcar(Mcdddr(e)));
             e = Mcadr(e);
             goto loop;
-        } else if (head == Mquote_symbol) {
+        } else if (hd == Mquote_symbol) {
             // quote
             x = Mcadr(e);
             goto do_k;
@@ -121,14 +133,13 @@ do_app:
     }
 
 do_k:
-    switch (Mcontinuation_type(k))
-    {
+    switch (Mcontinuation_type(k)) {
+    // bottom of continuation chain, so exit
     case NULL_CONT_TYPE:
-        // bottom of continuation chain, so exit
         return x;
 
+    // applications
     case APP_CONT_TYPE:
-        // applications
         if (Mcontinuation_app_tl(k)) {
             // evaluated at least the head
             //  `hd` the top of the val/arg list
@@ -153,16 +164,17 @@ do_k:
             goto loop;
         }
 
+    // if expressions
     case COND_CONT_TYPE:
-        // if expressions
         e = Mfalsep(x) ? Mcontinuation_cond_iff(k) : Mcontinuation_cond_ift(k);
         env = Mcontinuation_env(k);
         k = Mcontinuation_prev(k);
         goto loop;
 
+    // begin expressions
     case SEQ_CONT_TYPE:
-        // begin expressions
         x = Mcontinuation_seq_value(k);
+        env = Mcontinuation_env(k);
         if (Mnullp(Mcdr(x))) {
             // evaluate last expression in tail position
             k = Mcontinuation_prev(k);
@@ -172,9 +184,32 @@ do_k:
         }
 
         e = Mcar(x);
-        env = Mcontinuation_env(k);
+        goto loop;
+    
+    // let expressions
+    case LET_CONT_TYPE:
+        // add result using first binding
+        env_insert(
+            Mcontinuation_let_env(k),
+            Mcaar(Mcontinuation_let_bindings(k)),
+            x
+        );
+
+        Mcontinuation_let_bindings(k) = Mcdr(Mcontinuation_let_bindings(k));
+        if (Mnullp(Mcontinuation_let_bindings(k))) {
+            // no more bindings => evaluate body in tail position
+            e = Mcontinuation_let_body(k);
+            env = Mcontinuation_let_env(k);
+            k = Mcontinuation_prev(k);  
+        } else {
+            // at least one more binding
+            e = Mcadar(Mcontinuation_let_bindings(k));
+            env = Mcontinuation_env(k);
+        }
+
         goto loop;
 
+    // unknown
     default:
         minim_error1(
             "eval_expr",

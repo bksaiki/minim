@@ -92,6 +92,22 @@ int test_begin(void) {
     return passed;
 }
 
+int test_let(void) {
+    passed = 1;
+
+    check_equal("(let () 1)", "1");
+    check_equal("(let ([x 1]) x)", "1");
+    check_equal("(let ([x 1] [y 2]) y)", "2");
+    check_equal("(let ([x 1] [y 2] [z 3]) (cons x (cons y z)))", "(1 2 . 3)");
+
+    check_equal("(let ([x 1]) (cons (let ([x 2]) x) x))", "(2 . 1)");
+    check_equal("(let ([x 1]) (begin (let ([x 2]) x) x))", "1");
+    check_equal("(let ([x 1]) (if (let ([x 2]) #t) x 0))", "1");
+    check_equal("(let ([x 1]) (if (let ([x 2]) #f) x 0))", "0");
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -101,6 +117,7 @@ int main(int argc, char **argv) {
     log_test("quote", test_quote);
     log_test("if", test_if);
     log_test("begin", test_begin);
+    log_test("let", test_let);    
 
     minim_shutdown(0);
     GC_deinit();

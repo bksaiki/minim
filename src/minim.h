@@ -204,26 +204,38 @@ typedef enum {
     NULL_CONT_TYPE,
     APP_CONT_TYPE,
     COND_CONT_TYPE,
-    SEQ_CONT_TYPE
+    SEQ_CONT_TYPE,
+    LET_CONT_TYPE
 } cont_type_t;
 
+#define Mcontinuation_null_size     Mcontinuation_size(0)
 #define Mcontinuation_nullp(o)      (Mcontinuation_type(o) == NULL_CONT_TYPE)
 
+#define Mcontinuation_app_size      Mcontinuation_size(2)
 #define Mcontinuation_appp(o)       (Mcontinuation_type(o) == APP_CONT_TYPE)
 #define Mcontinuation_app_hd(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
 #define Mcontinuation_app_tl(o)     (*((obj*) ptr_add(o, 4 * ptr_size)))
 
+#define Mcontinuation_cond_size         Mcontinuation_size(2)
 #define Mcontinuation_condp(o)          (Mcontinuation_type(o) == COND_CONT_TYPE)
 #define Mcontinuation_cond_ift(o)       (*((obj*) ptr_add(o, 3 * ptr_size)))
 #define Mcontinuation_cond_iff(o)       (*((obj*) ptr_add(o, 4 * ptr_size)))
 
+#define Mcontinuation_seq_size          Mcontinuation_size(1)
 #define Mcontinuation_seqp(o)           (Mcontinuation_type(o) == SEQ_CONT_TYPE)
 #define Mcontinuation_seq_value(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
+
+#define Mcontinuation_let_size          Mcontinuation_size(3)
+#define Mcontinuation_letp(o)           (Mcontinuation_type(o) == LET_CONT_TYPE)
+#define Mcontinuation_let_env(o)        (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_let_bindings(o)   (*((obj*) ptr_add(o, 4 * ptr_size)))
+#define Mcontinuation_let_body(o)       (*((obj*) ptr_add(o, 5 * ptr_size)))
 
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
 obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
+obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 
 // Port 
 // +------------+
