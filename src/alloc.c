@@ -104,6 +104,7 @@ obj Mnull_continuation(obj env) {
     obj x = GC_malloc(Mcontinuation_null_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = NULL_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = Mnull;
     Mcontinuation_env(x) = env;
     return x;
@@ -113,6 +114,7 @@ obj Mapp_continuation(obj prev, obj env, obj args) {
     obj x = GC_malloc(Mcontinuation_app_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = APP_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_app_hd(x) = args;
@@ -124,6 +126,7 @@ obj Mcond_continuation(obj prev, obj env, obj ift, obj iff) {
     obj x = GC_malloc(Mcontinuation_cond_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = COND_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_cond_ift(x) = ift;
@@ -135,6 +138,7 @@ obj Mseq_continuation(obj prev, obj env, obj seq) {
     obj x = GC_malloc(Mcontinuation_seq_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SEQ_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_seq_value(x) = seq;
@@ -145,6 +149,7 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body) {
     obj x = GC_malloc(Mcontinuation_let_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = LET_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_let_env(x) = env_extend(env);
@@ -157,6 +162,7 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
     obj x = GC_malloc(Mcontinuation_seq_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SETB_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_setb_name(x) = name;
@@ -167,8 +173,8 @@ obj Mcallcc_continuation(obj prev, obj env) {
     obj x = GC_malloc(Mcontinuation_seq_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLCC_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
-    Mcontinuation_callcc_frozenp(x) = 0;
     return x;
 }

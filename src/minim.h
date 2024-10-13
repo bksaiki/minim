@@ -217,15 +217,17 @@ obj Mclosure(obj env, obj formals, obj body);
 // +------------+
 // |    type    | [0, 1)
 // | cont_type  | [1, 2)
+// |  immutable | [2, 3)
 // |    prev    | [8, 16)
 // |    env     | [16, 24)
 // |    ...     |
 // +------------+
-#define Mcontinuation_size(n)       ((n + 3) * ptr_size)
-#define Mcontinuationp(o)           (obj_type(o) == CONTINUATON_OBJ_TYPE)
-#define Mcontinuation_type(o)       (*((byte*) ptr_add(o, 1)))
-#define Mcontinuation_prev(o)       (*((obj*) ptr_add(o, ptr_size)))
-#define Mcontinuation_env(o)        (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mcontinuation_size(n)           ((n + 3) * ptr_size)
+#define Mcontinuationp(o)               (obj_type(o) == CONTINUATON_OBJ_TYPE)
+#define Mcontinuation_type(o)           (*((byte*) ptr_add(o, 1)))
+#define Mcontinuation_immutablep(o)     (*((byte*) ptr_add(o, 2)))
+#define Mcontinuation_prev(o)           (*((obj*) ptr_add(o, ptr_size)))
+#define Mcontinuation_env(o)            (*((obj*) ptr_add(o, 2 * ptr_size)))
 
 typedef enum {
     NULL_CONT_TYPE,
@@ -263,8 +265,7 @@ typedef enum {
 #define Mcontinuation_setb_size         Mcontinuation_size(1)
 #define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-#define Mcontinuation_callcc_size           Mcontinuation_size(1)
-#define Mcontinuation_callcc_frozenp(o)     (*((int*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_callcc_size       Mcontinuation_size(0)
 
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
@@ -343,11 +344,23 @@ obj Mlength(obj x);
 
 // Continuations
 
-// Restores a (frozen) continuation chain.
-// A continuation chain is frozen when the top-most continuation
-// is created by `call/cc`. For safety, the chain is made immutable.
-// When exiting through it, we must make a copy.
-obj continuation_restore(obj cc);
+// Marks a continuation chain as immutable.
+// Unwinding through an immutable continuation chain requires
+// copying each continuation as needed.
+void continuation_set_immutable(obj cc);
+
+// Safely returns a mutable version of the current continuation.
+// If the continuation chain is immutable, a copy is made.
+// Otherwise, the argument is returned.
+obj continuation_mutable(obj x);
+
+// Restores a continuation.
+// The result is a new continuation chain formed by merging
+// the common ancestors of the continuation and current continuation.
+
+
+// For debugging
+void print_continuation(obj cc);
 
 // Hashing
 
@@ -377,6 +390,11 @@ obj read_object(obj ip);
 // Printing
 
 void write_obj(FILE *out, obj o);
+
+#define writeln_object(out, o) { \
+    write_obj(out, o); \
+    fputc('\n', out); \
+}
 
 // Errors
 

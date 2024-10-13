@@ -131,6 +131,7 @@ loop:
             goto do_k;
         } else if (hd == Mcallcc_symbol) {
             // call/cc
+            continuation_set_immutable(k); // freeze the continuation chain
             k = Mcallcc_continuation(k, env);
             e = Mcadr(e);
             goto loop;
@@ -189,6 +190,7 @@ do_k:
 
     // applications
     case APP_CONT_TYPE:
+        k = continuation_mutable(k);
         if (Mcontinuation_app_tl(k)) {
             // evaluated at least the head
             //  `hd` the top of the val/arg list
@@ -217,6 +219,7 @@ do_k:
 
     // if expressions
     case COND_CONT_TYPE:
+        k = continuation_mutable(k);
         e = Mfalsep(x) ? Mcontinuation_cond_iff(k) : Mcontinuation_cond_ift(k);
         env = Mcontinuation_env(k);
         k = Mcontinuation_prev(k);
@@ -224,6 +227,7 @@ do_k:
 
     // begin expressions
     case SEQ_CONT_TYPE:
+        k = continuation_mutable(k);
         x = Mcontinuation_seq_value(k);
         env = Mcontinuation_env(k);
         if (Mnullp(Mcdr(x))) {
@@ -239,6 +243,8 @@ do_k:
     
     // let expressions
     case LET_CONT_TYPE:
+        k = continuation_mutable(k);
+    
         // add result using first binding
         env_insert(
             Mcontinuation_let_env(k),
@@ -251,7 +257,7 @@ do_k:
             // no more bindings => evaluate body in tail position
             e = Mcontinuation_let_body(k);
             env = Mcontinuation_let_env(k);
-            k = Mcontinuation_prev(k);  
+            k = Mcontinuation_prev(k);
         } else {
             // at least one more binding
             e = Mcadar(Mcontinuation_let_bindings(k));
@@ -262,6 +268,7 @@ do_k:
 
     // set! expressions
     case SETB_CONT_TYPE:
+        k = continuation_mutable(k);
         env = Mcontinuation_env(k);
         e = env_find(env, Mcontinuation_setb_name(k));
         if (Mfalsep(x)) {
@@ -278,33 +285,27 @@ do_k:
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        if (Mcontinuation_callcc_frozenp(k)) {
-            // exiting through the site of a captured continuation
-            k = continuation_restore(Mcontinuation_prev(k));
+        // actually do call/cc
+        k = Mcontinuation_prev(k);
+        if (Mprimp(x)) {
+            iptr arity = Mprim_arity(x);
+            if (arity < 0 ? arity == -1 : arity != 1)
+                minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
+
+            x = do_prim(x, Mlist1(k));
+            goto do_k;
+        } else if (Mclosurep(x)) {
+            iptr arity = Mclosure_arity(x);
+            if (arity < 0 ? arity == -1 : arity != 1)
+                minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
+
+            e = Mclosure_body(x);
+            env = do_closure(x, Mlist1(k));
+            goto loop;
+        } else if (Mcontinuationp(x)) {
             goto do_k;
         } else {
-            // entering a procedure for call/cc for the first time
-            if (Mprimp(x)) {
-                iptr arity = Mprim_arity(x);
-                if (arity < 0 ? arity == -1 : arity != 1)
-                    minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-
-                x = do_prim(x, Mlist1(k));
-                goto do_k;
-            } else if (Mclosurep(x)) {
-                iptr arity = Mclosure_arity(x);
-                if (arity < 0 ? arity == -1 : arity != 1)
-                    minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-                
-                Mcontinuation_callcc_frozenp(k) = 1;
-                env = do_closure(x, Mlist1(k));
-                e = Mclosure_body(x);
-                goto loop;
-            } else if (Mcontinuationp(x)) {
-                goto do_k;
-            } else {
-                minim_error1("call/cc", "expected a procedure", x);
-            }
+            minim_error1("call/cc", "expected a procedure", x);
         }
 
     // unknown

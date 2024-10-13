@@ -209,8 +209,5 @@ int main(int argc, char **argv) {
     log_test("set!", test_setb);
     log_test("call/cc", test_callcc);
 
-    minim_shutdown(0);
-    GC_deinit();
-
-    return return_code;
+    minim_shutdown(return_code);
 }
