@@ -93,6 +93,25 @@ static obj do_closure(obj f, obj args) {
     return env;
 }
 
+static obj do_arg(obj tc, obj x) {
+    obj k = continuation_mutable(Mtc_cc(tc));
+    if (Mcontinuation_app_tl(k)) {
+        // evaluated at least the head
+        //  `hd` the top of the val/arg list
+        //  `tl` car is the last val, cdr is the remaining arguments
+        Mcdr(Mcontinuation_app_tl(k)) = Mcons(x, Mcddr(Mcontinuation_app_tl(k)));
+        Mcontinuation_app_tl(k) = Mcdr(Mcontinuation_app_tl(k));
+    } else {
+        // have not evaluated before
+        //  `hd` is the top of the argument list
+        //  `tl` is NULL
+        Mcontinuation_app_hd(k) = Mcons(x, Mcdr(Mcontinuation_app_hd(k)));
+        Mcontinuation_app_tl(k) = Mcontinuation_app_hd(k);
+    }
+
+    return k;
+}
+
 static obj do_begin(obj tc) {
     obj x, k;
 
@@ -109,6 +128,31 @@ static obj do_begin(obj tc) {
     }
 
     return Mcar(x);
+}
+
+static obj do_let(obj tc, obj v) {
+    obj k, env, binds;
+
+    k = continuation_mutable(Mtc_cc(tc));
+    env = Mcontinuation_let_env(k);
+    binds = Mcontinuation_let_bindings(k);
+    
+    // add result using first binding
+    env_insert(env, Mcaar(binds), v);
+
+    binds = Mcdr(binds);
+    if (Mnullp(binds)) {
+        // no more bindings => evaluate body in tail position
+        Mtc_env(tc) = env;
+        Mtc_cc(tc) = Mcontinuation_prev(k);
+        return Mcontinuation_let_body(k);
+    } else {
+        // at least one more binding
+        Mcontinuation_let_bindings(k) = binds;
+        Mtc_env(tc) = Mcontinuation_env(k);
+        Mtc_cc(tc) = k;
+        return Mcadar(binds);
+    }
 }
 
 static void do_setb(obj tc, obj x, obj v) {
@@ -240,21 +284,7 @@ do_k:
 
     // applications
     case APP_CONT_TYPE:
-        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
-        if (Mcontinuation_app_tl(Mtc_cc(tc))) {
-            // evaluated at least the head
-            //  `hd` the top of the val/arg list
-            //  `tl` car is the last val, cdr is the remaining arguments
-            Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))) = Mcons(x, Mcddr(Mcontinuation_app_tl(Mtc_cc(tc))));
-            Mcontinuation_app_tl(Mtc_cc(tc)) = Mcdr(Mcontinuation_app_tl(Mtc_cc(tc)));
-        } else {
-            // have not evaluated before
-            //  `hd` is the top of the argument list
-            //  `tl` is NULL
-            Mcontinuation_app_hd(Mtc_cc(tc)) = Mcons(x, Mcdr(Mcontinuation_app_hd(Mtc_cc(tc))));
-            Mcontinuation_app_tl(Mtc_cc(tc)) = Mcontinuation_app_hd(Mtc_cc(tc));
-        }
-
+        Mtc_cc(tc) = do_arg(tc, x);
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         if (Mnullp(Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))))) {
             // evaluated last argument
@@ -282,27 +312,7 @@ do_k:
     
     // let expressions
     case LET_CONT_TYPE:
-        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
-    
-        // add result using first binding
-        env_insert(
-            Mcontinuation_let_env(Mtc_cc(tc)),
-            Mcaar(Mcontinuation_let_bindings(Mtc_cc(tc))),
-            x
-        );
-
-        Mcontinuation_let_bindings(Mtc_cc(tc)) = Mcdr(Mcontinuation_let_bindings(Mtc_cc(tc)));
-        if (Mnullp(Mcontinuation_let_bindings(Mtc_cc(tc)))) {
-            // no more bindings => evaluate body in tail position
-            e = Mcontinuation_let_body(Mtc_cc(tc));
-            Mtc_env(tc) = Mcontinuation_let_env(Mtc_cc(tc));
-            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
-        } else {
-            // at least one more binding
-            e = Mcadar(Mcontinuation_let_bindings(Mtc_cc(tc)));
-            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-        }
-
+        e = do_let(tc, x);
         goto loop;
 
     // set! expressions
