@@ -178,3 +178,13 @@ obj Mcallcc_continuation(obj prev, obj env) {
     Mcontinuation_env(x) = env;
     return x;
 }
+
+obj Mthread_context(void) {
+    obj x = GC_malloc(Mtc_size);
+    obj_type(x) = THREAD_OBJ_TYPE;
+    Mtc_cc(x) = Mnull;
+    Mtc_env(x) = Mnull;
+    Mtc_vb(x) = GC_malloc(INIT_VALUES_BUFFER_LEN * sizeof(obj));
+    Mtc_vc(x) = INIT_VALUES_BUFFER_LEN;
+    return x;
+}

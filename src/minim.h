@@ -32,6 +32,7 @@ typedef void            *obj;
 // system constants
 
 #define SYMBOL_MAX_LENGTH       4096
+#define INIT_VALUES_BUFFER_LEN  10
 
 // macros
 
@@ -73,7 +74,8 @@ typedef enum {
     PRIM_OBJ_TYPE,
     CLOSURE_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
-    PORT_OBJ_TYPE
+    PORT_OBJ_TYPE,
+    THREAD_OBJ_TYPE
 } obj_type_t;
 
 // Objects
@@ -302,6 +304,23 @@ int port_peek(obj p);
 int port_read(obj p);
 void port_write(int c, obj p);
 
+// Thread context
+// +------------+
+// |    type    | [0, 1)
+// |    cc      | [8, 16)
+// |    env     | [16, 24)
+// |    vb      | [24, 32)
+// |    vc      | [32, 40)
+// +------------+
+#define Mtc_size            (5 * ptr_size)
+#define Mtcp(o)             (obj_type(o) == THREAD_OBJ_TYPE)
+#define Mtc_cc(o)           (*((obj*) ptr_add(o, ptr_size)))
+#define Mtc_env(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mtc_vb(o)           (*((obj**) ptr_add(o, 3 * ptr_size)))
+#define Mtc_vc(o)           (*((uptr*) ptr_add(o, 4 * ptr_size)))
+
+obj Mthread_context(void);
+
 // Composite predicates
 
 #define Mboolp(x)       (Mtruep(x) || Mfalsep(x))
@@ -419,6 +438,10 @@ obj intern(intern_table *tab, const char *s);
 #define Mintern(x)      intern(itab, x)
 
 // System
+
+extern obj *current_tc_box;
+
+#define current_tc()    (*current_tc_box)
 
 void minim_init(void);
 NORETURN void minim_shutdown(int);
