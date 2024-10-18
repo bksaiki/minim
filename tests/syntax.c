@@ -40,15 +40,15 @@ char *write_debug(obj o) {
 }
 
 void check_equal(const char *input, const char *expect) {
-    obj p, e, x, env;
+    obj p, e, tc, x;
     char *str;
 
     p = Minput_string_port(Mstring(input));
     e = read_object(p);
 
-    env = empty_env();
-    env = prim_env(env);
-    x = eval_expr(e, env);
+    tc = Mcurr_tc();
+    Mtc_env(tc) = prim_env(empty_env());
+    x = eval_expr(e);
 
     str = write_debug(x);
     if (strcmp(str, expect) != 0) {

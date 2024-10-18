@@ -400,7 +400,7 @@ int Mimmediatep(obj x);
 
 void check_expr(obj e);
 obj expand_expr(obj e);
-obj eval_expr(obj e, obj env);
+obj eval_expr(obj e);
 
 // Reading
 
@@ -439,9 +439,9 @@ obj intern(intern_table *tab, const char *s);
 
 // System
 
-extern obj *current_tc_box;
+extern obj *Mcurr_tc_box;
 
-#define current_tc()    (*current_tc_box)
+#define Mcurr_tc()    (*((obj*) Mcurr_tc_box))
 
 void minim_init(void);
 NORETURN void minim_shutdown(int);

@@ -19,7 +19,7 @@ obj Mquote_symbol;
 obj Msetb_symbol;
 
 intern_table *itab;
-obj *current_tc_box;
+obj *Mcurr_tc_box;
 
 void minim_init(void) {
     // special values
@@ -51,8 +51,8 @@ void minim_init(void) {
     Msetb_symbol = Mintern("set!");
 
     // initialize thread context
-    current_tc_box = GC_malloc_uncollectable(sizeof(obj));
-    current_tc() = Mthread_context();
+    Mcurr_tc_box = GC_malloc_uncollectable(sizeof(obj));
+    Mcurr_tc() = Mthread_context();
 
     // initialize primitives
     init_prims();
