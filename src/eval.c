@@ -93,6 +93,52 @@ static obj do_closure(obj f, obj args) {
     return env;
 }
 
+static obj do_begin(obj tc) {
+    obj x, k;
+
+    k = continuation_mutable(Mtc_cc(tc));
+    x = Mcontinuation_seq_value(k);
+    Mtc_env(tc) = Mcontinuation_env(k);
+    if (Mnullp(Mcdr(x))) {
+        // evaluate last expression in tail position
+        Mtc_cc(tc) = Mcontinuation_prev(k);
+    } else {
+        // still evaluating sequence
+        Mcontinuation_seq_value(k) = Mcdr(x);
+        Mtc_cc(tc) = k;
+    }
+
+    return Mcar(x);
+}
+
+static void do_setb(obj tc, obj x, obj v) {
+    obj env, cell;
+
+    env = Mcontinuation_env(Mtc_cc(tc));
+    cell = env_find(env, x);
+    if (Mfalsep(cell)) {
+        minim_error1("set!", "unbound variable", x);
+    } else {
+        Mcdr(cell) = v;
+    }
+}
+
+static void check_callcc(obj f) {
+    if (Mprimp(f)) {
+        iptr arity = Mprim_arity(f);
+        if (arity < 0 ? arity == -1 : arity != 1)
+            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
+    } else if (Mclosurep(f)) {
+        iptr arity = Mclosure_arity(f);
+        if (arity < 0 ? arity == -1 : arity != 1)
+            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
+    } else if (Mcontinuationp(f)) {
+        // do nothing
+    } else {
+        minim_error1("call/cc", "expected a procedure", f);
+    }
+}
+
 static obj eval_k(obj e) {
     obj tc, x, hd, f, args;
 
@@ -231,18 +277,7 @@ do_k:
 
     // begin expressions
     case SEQ_CONT_TYPE:
-        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
-        x = Mcontinuation_seq_value(Mtc_cc(tc));
-        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-        if (Mnullp(Mcdr(x))) {
-            // evaluate last expression in tail position
-            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
-        } else {
-            // still evaluating sequence
-            Mcontinuation_seq_value(Mtc_cc(tc)) = Mcdr(x);
-        }
-
-        e = Mcar(x);
+        e = do_begin(tc);
         goto loop;
     
     // let expressions
@@ -272,38 +307,18 @@ do_k:
 
     // set! expressions
     case SETB_CONT_TYPE:
-        // update binding
-        e = env_find(Mcontinuation_env(Mtc_cc(tc)), Mcontinuation_setb_name(Mtc_cc(tc)));
-        if (Mfalsep(e)) {
-            minim_error1("set!", "unbound variable", Mcontinuation_setb_name(Mtc_cc(tc)));
-        } else {
-            Mcdr(e) = x;
-        }
-
-        // result is void
+        // update binding, result is void
+        do_setb(tc, Mcontinuation_setb_name(Mtc_cc(tc)), x);
         x = Mvoid;
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
         goto do_k;
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-        if (Mprimp(x)) {
-            iptr arity = Mprim_arity(x);
-            if (arity < 0 ? arity == -1 : arity != 1)
-                minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-        } else if (Mclosurep(x)) {
-            iptr arity = Mclosure_arity(x);
-            if (arity < 0 ? arity == -1 : arity != 1)
-                minim_error1("call/cc", "expected a procedure of at least 1 argument", x);
-        } else if (Mcontinuationp(x)) {
-            // do nothing
-        } else {
-            minim_error1("call/cc", "expected a procedure", x);
-        }
-
+        check_callcc(x);
         f = x;
         args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
+        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         goto do_app;
 
     // unknown
