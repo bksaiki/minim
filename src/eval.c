@@ -14,6 +14,26 @@ NORETURN void raise_arity_exn(obj prim, obj args) {
     minim_error2(Mprim_name(prim), "arity mismatch", Mfixnum(Mprim_arity(prim)), Mlength(args));
 }
 
+static void clear_values_buffer(obj tc) {
+    Mtc_vc(tc) = 0;
+}
+
+static obj force_single_value(obj x) {
+    obj tc;
+
+    if (Mvaluesp(x)) {
+        tc = Mcurr_tc();
+        if (Mtc_vc(tc) != 1) {
+            minim_error2(NULL, "values mismatch", Mfixnum(1), Mfixnum(Mtc_vc(tc)));
+        } else {
+            return Mtc_vb(tc)[0];
+        }
+    } else {
+        return x;
+    }
+}
+
+
 static void do_values(obj args) {
     obj tc;
     iptr vc, i;
@@ -302,6 +322,8 @@ do_app:
         goto loop;
     } else if (Mcontinuationp(f)) {
         Mtc_cc(tc) = continuation_restore(Mtc_cc(tc), f);
+        do_values(args);
+        x = Mvalues;
         goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
@@ -315,6 +337,9 @@ do_k:
 
     // applications
     case APP_CONT_TYPE:
+        x = force_single_value(x);
+        clear_values_buffer(tc);
+        Mtc_vc(tc) = 0;
         Mtc_cc(tc) = do_arg(tc, x);
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         if (Mnullp(Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))))) {
@@ -330,6 +355,8 @@ do_k:
 
     // if expressions
     case COND_CONT_TYPE:
+        x = force_single_value(x);
+        clear_values_buffer(tc);
         Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         e = Mfalsep(x) ? Mcontinuation_cond_iff(Mtc_cc(tc)) : Mcontinuation_cond_ift(Mtc_cc(tc));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
@@ -338,17 +365,22 @@ do_k:
 
     // begin expressions
     case SEQ_CONT_TYPE:
+        clear_values_buffer(tc);
         e = do_begin(tc);
         goto loop;
     
     // let expressions
     case LET_CONT_TYPE:
+        x = force_single_value(x);
+        clear_values_buffer(tc);
         e = do_let(tc, x);
         goto loop;
 
     // set! expressions
     case SETB_CONT_TYPE:
         // update binding, result is void
+        x = force_single_value(x);
+        clear_values_buffer(tc);
         do_setb(tc, Mcontinuation_setb_name(Mtc_cc(tc)), x);
         x = Mvoid;
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
@@ -356,8 +388,9 @@ do_k:
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        check_callcc(x);
-        f = x;
+        f = force_single_value(x);
+        clear_values_buffer(tc);
+        check_callcc(f);
         args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         goto do_app;
@@ -376,10 +409,15 @@ obj eval_expr(obj e) {
     k = Mtc_cc(tc);
     env = Mtc_env(tc);
 
+    // evaluate
     check_expr(e);
     e = expand_expr(e);
     Mtc_cc(tc) = Mnull_continuation(env);
     v = eval_k(e);
+
+    // if the result is #<mvvalues> with only one value, pop it out
+    if (Mvaluesp(v) && Mtc_vc(tc) == 1)
+        v = Mtc_vb(tc)[0];
 
     // restore old continuation and environment
     Mtc_cc(tc) = k;
