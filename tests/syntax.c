@@ -92,6 +92,17 @@ int test_begin(void) {
     return passed;
 }
 
+int test_values(void) {
+    passed = 1;
+
+    check_equal("(call-with-values (lambda () (values)) (lambda xs xs))", "()");
+    check_equal("(call-with-values (lambda () (values 1)) (lambda xs xs))", "(1)");
+    check_equal("(call-with-values (lambda () (values 1 2 3)) (lambda xs xs))", "(1 2 3)");
+    check_equal("(call-with-values (lambda () (values 1 2)) fx2+)", "3");
+
+    return passed;
+}
+
 int test_let(void) {
     passed = 1;
 
@@ -209,6 +220,7 @@ int main(int argc, char **argv) {
     log_test("quote", test_quote);
     log_test("if", test_if);
     log_test("begin", test_begin);
+    log_test("values", test_values);
     log_test("let", test_let);
     log_test("letrec", test_letrec);
     log_test("let (loop)", test_let_loop);

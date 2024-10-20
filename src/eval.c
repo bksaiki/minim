@@ -33,7 +33,6 @@ static obj force_single_value(obj x) {
     }
 }
 
-
 static void do_values(obj args) {
     obj tc;
     iptr vc, i;
@@ -56,6 +55,27 @@ static void do_values(obj args) {
     for (i = 0; i < vc; i++) {
         Mtc_vb(tc)[i] = Mcar(args);
         args = Mcdr(args);
+    }
+}
+
+static obj do_call_with_values(void) {
+    obj tc, hd, tl;
+    uptr vc, i;
+
+    tc = Mcurr_tc();
+    vc = Mtc_vc(tc);
+    if (vc == 0) {
+        return Mnull;
+    } else if (vc == 1) {
+        return Mlist1(Mtc_vb(tc)[0]);
+    } else {
+        hd = tl = Mcons(Mtc_vb(tc)[0], Mnull);
+        for (i = 1; i < vc; i++) {
+            Mcdr(tl) = Mcons(Mtc_vb(tc)[i], Mnull);
+            tl = Mcdr(tl);
+        }
+
+        return hd;
     }
 }
 
@@ -215,16 +235,32 @@ static void do_setb(obj tc, obj x, obj v) {
 static void check_callcc(obj f) {
     if (Mprimp(f)) {
         iptr arity = Mprim_arity(f);
-        if (arity < 0 ? arity == -1 : arity != 1)
+        if (arity < 0 ? arity < -2 : arity != 1)
             minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
     } else if (Mclosurep(f)) {
         iptr arity = Mclosure_arity(f);
-        if (arity < 0 ? arity == -1 : arity != 1)
+        if (arity < 0 ? arity < -2 : arity != 1)
             minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
     } else if (Mcontinuationp(f)) {
         // do nothing
     } else {
         minim_error1("call/cc", "expected a procedure", f);
+    }
+}
+
+static void check_callwv_producer(obj f) {
+    if (Mprimp(f)) {
+        iptr arity = Mprim_arity(f);
+        if (arity < 0 ? arity < -1 : arity != 0)
+            minim_error1("call-with-values", "expected a procedure of at least 0 argument", f);
+    } else if (Mclosurep(f)) {
+        iptr arity = Mclosure_arity(f);
+        if (arity < 0 ? arity < -1 : arity != 0)
+            minim_error1("call-with-values", "expected a procedure of at least 0 argument", f);
+    } else if (Mcontinuationp(f)) {
+        // do nothing
+    } else {
+        minim_error1("call-with-values", "expected a procedure", f);
     }
 }
 
@@ -270,6 +306,11 @@ loop:
             // call/cc
             continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
             Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc));
+            e = Mcadr(e);
+            goto loop;
+        } else if (hd == Mcallwv_symbol) {
+            // call-with-values
+            Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
             e = Mcadr(e);
             goto loop;
         } else {
@@ -394,10 +435,50 @@ do_k:
         args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         goto do_app;
+    
+    // call-with-values expressions
+    case CALLWV_CONT_TYPE:
+        if (Mfalsep(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
+            // evaluated producer syntax
+            f = force_single_value(x);
+            clear_values_buffer(tc);
+            check_callwv_producer(f);
+
+            Mcontinuation_callwv_producer(Mtc_cc(tc)) = f;
+            e = Mcontinuation_callwv_consumer(Mtc_cc(tc));
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            goto loop;
+        } else if (!Mprocp(Mcontinuation_callwv_consumer(Mtc_cc(tc)))) {
+            // evaluated consumer syntax
+            x = force_single_value(x);
+            clear_values_buffer(tc);
+            if (!Mprocp(x)) {
+                minim_error1("call-with-values", "expected a procedure", x);
+            }
+
+            Mcontinuation_callwv_consumer(Mtc_cc(tc)) = x;
+
+            f = Mcontinuation_callwv_producer(Mtc_cc(tc));
+            args = Mnull;
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), Mnull); // dummy continuation
+            goto do_app;
+        } else {
+            // evaluated producer procedure
+            f = Mcontinuation_callwv_consumer(Mtc_cc(tc));
+            args = do_call_with_values();
+            clear_values_buffer(tc);
+            goto do_app;
+        }
+
 
     // unknown
     default:
-        minim_error1("eval_expr", "unimplemented", Mfixnum(Mcontinuation_type(Mtc_cc(tc))));
+        minim_error1(
+            "eval_expr",
+            "unimplemented continuation handler",
+            Mfixnum(Mcontinuation_type(Mtc_cc(tc)))
+        );
     }
 }
 

@@ -55,6 +55,7 @@ typedef void            *obj;
 
 extern obj Mbegin_symbol;
 extern obj Mcallcc_symbol;
+extern obj Mcallwv_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
@@ -240,7 +241,8 @@ typedef enum {
     SEQ_CONT_TYPE,
     LET_CONT_TYPE,
     SETB_CONT_TYPE,
-    CALLCC_CONT_TYPE
+    CALLCC_CONT_TYPE,
+    CALLWV_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_null_size     Mcontinuation_size(0)
@@ -271,6 +273,10 @@ typedef enum {
 
 #define Mcontinuation_callcc_size       Mcontinuation_size(0)
 
+#define Mcontinuation_callwv_size               Mcontinuation_size(2)
+#define Mcontinuation_callwv_producer(o)        (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_callwv_consumer(o)        (*((obj*) ptr_add(o, 4 * ptr_size)))
+
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
 obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
@@ -278,6 +284,7 @@ obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
 obj Mcallcc_continuation(obj prev, obj env);
+obj Mcallwv_continuation(obj prev, obj env, obj producer);
 
 // Port 
 // +------------+
@@ -328,7 +335,7 @@ obj Mthread_context(void);
 // Composite predicates
 
 #define Mboolp(x)       (Mtruep(x) || Mfalsep(x))
-#define Mprocp(x)       (Mprimp(x) || Mclosurep(x))
+#define Mprocp(x)       (Mprimp(x) || Mclosurep(x) || Mcontinuationp(x))
 
 #define Minput_portp(o)     (Mportp(o) && (Mport_flags(o) & PORT_FLAG_READ))
 #define Moutput_portp(o)    (Mportp(o) && !(Mport_flags(o) & PORT_FLAG_READ))

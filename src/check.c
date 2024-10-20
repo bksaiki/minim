@@ -21,6 +21,20 @@ static void check_1ary_syntax(obj e) {
 }
 
 // Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum>)
+static void check_2ary_syntax(obj e) {
+    obj rib;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+    
+    rib = Mcdr(rib);
+    if (!Mconsp(rib) || !Mnullp(Mcdr(rib)))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> <datum> <datum>)
 static void check_3ary_syntax(obj e) {
     obj rib;
@@ -195,6 +209,10 @@ void check_expr(obj e) {
         } else if (hd == Mcallcc_symbol) {
             check_1ary_syntax(e);
             check_expr(Mcadr(e));
+        } else if (hd == Mcallwv_symbol) {
+            check_2ary_syntax(e);
+            check_expr(Mcadr(e));
+            check_expr(Mcaddr(e));
         } else if (Mlistp(e)) {
             for (it = e; !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));

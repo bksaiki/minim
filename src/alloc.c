@@ -159,7 +159,7 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body) {
 }
 
 obj Msetb_continuation(obj prev, obj env, obj name) {
-    obj x = GC_malloc(Mcontinuation_seq_size);
+    obj x = GC_malloc(Mcontinuation_setb_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SETB_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
@@ -170,12 +170,24 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
 }
 
 obj Mcallcc_continuation(obj prev, obj env) {
-    obj x = GC_malloc(Mcontinuation_seq_size);
+    obj x = GC_malloc(Mcontinuation_callcc_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLCC_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
+    return x;
+}
+
+obj Mcallwv_continuation(obj prev, obj env, obj consumer) {
+    obj x = GC_malloc(Mcontinuation_callwv_size);
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = CALLWV_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
+    Mcontinuation_callwv_producer(x) = Mfalse;
+    Mcontinuation_callwv_consumer(x) = consumer;
     return x;
 }
 

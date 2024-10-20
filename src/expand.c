@@ -158,6 +158,8 @@ loop:
             return e;
         } else if (hd == Mcallcc_symbol) {
             return Mlist2(Mcallcc_symbol, expand_expr(Mcadr(e)));
+        } else if (hd == Mcallwv_symbol) {
+            return Mlist3(Mcallwv_symbol, expand_expr(Mcadr(e)), expand_expr(Mcaddr(e)));
         } else {
             hd = tl = Mcons(expand_expr(Mcar(e)), Mnull);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it)) {
