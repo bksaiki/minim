@@ -2,23 +2,41 @@
 
 #include "minim.h"
 
-static obj nullp_prim;
-static obj cons_prim;
-static obj car_prim;
-static obj cdr_prim;
+obj nullp_prim;
+obj cons_prim;
+obj car_prim;
+obj cdr_prim;
 
-static obj fx_neg_prim;
-static obj fx_inc_prim;
-static obj fx_dec_prim;
-static obj fx_add_prim;
-static obj fx_sub_prim;
-static obj fx_mul_prim;
-static obj fx_div_prim;
-static obj fx_eq_prim;
-static obj fx_ge_prim;
-static obj fx_le_prim;
-static obj fx_gt_prim;
-static obj fx_lt_prim;
+obj fx_neg_prim;
+obj fx_inc_prim;
+obj fx_dec_prim;
+obj fx_add_prim;
+obj fx_sub_prim;
+obj fx_mul_prim;
+obj fx_div_prim;
+obj fx_eq_prim;
+obj fx_ge_prim;
+obj fx_le_prim;
+obj fx_gt_prim;
+obj fx_lt_prim;
+
+obj values_prim;
+
+// Wrapped procedures
+
+#define proc0(name, e) static obj name(void) { return (e); }
+#define proc1(name, x, e) static obj name(obj x) { return (e); }
+
+
+proc1(nullp_proc, x, Mbool(Mnullp(x)))
+proc1(car_proc, x, Mcar(x))
+proc1(cdr_proc, x, Mcdr(x))
+
+static obj values_proc() {
+    minim_error("values_proc()", "should never call");
+}
+
+// Public API
 
 void init_prims(void) {
     nullp_prim = Mprim(nullp_proc, 1, "null?");
@@ -38,6 +56,8 @@ void init_prims(void) {
     fx_le_prim = Mprim(Mfx_le, 2, "fx2<=");
     fx_gt_prim = Mprim(Mfx_gt, 2, "fx2>");
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
+
+    values_prim = Mprim(values_proc, -1, "values");
 }
 
 #define env_add_prim(e, p)  \
@@ -64,20 +84,7 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
 
+    env_add_prim(env, values_prim);
+
     return env;
 }
-
-// Wrapped primitives
-
-obj nullp_proc(obj x) {
-    return Mbool(Mnullp(x));
-}
-
-obj car_proc(obj x) {
-    return Mcar(x);
-}
-
-obj cdr_proc(obj x) {
-    return Mcdr(x);
-}
-

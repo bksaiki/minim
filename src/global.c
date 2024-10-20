@@ -7,6 +7,7 @@ obj Mtrue;
 obj Mfalse;
 obj Mvoid;
 obj Meof;
+obj Mvalues;
 obj Munbound;
 
 obj Mbegin_symbol;
@@ -33,6 +34,8 @@ void minim_init(void) {
     obj_type(Mvoid) = SPECIAL_OBJ_TYPE;
     Meof = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Meof) = SPECIAL_OBJ_TYPE;
+    Mvalues = GC_malloc_uncollectable(sizeof(byte));
+    obj_type(Mvalues) = SPECIAL_OBJ_TYPE;
     Munbound = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Munbound) = SPECIAL_OBJ_TYPE;
 

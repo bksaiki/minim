@@ -185,6 +185,7 @@ obj Mthread_context(void) {
     Mtc_cc(x) = Mnull;
     Mtc_env(x) = Mnull;
     Mtc_vb(x) = GC_malloc(INIT_VALUES_BUFFER_LEN * sizeof(obj));
-    Mtc_vc(x) = INIT_VALUES_BUFFER_LEN;
+    Mtc_va(x) = INIT_VALUES_BUFFER_LEN;
+    Mtc_vc(x) = 0;
     return x;
 }

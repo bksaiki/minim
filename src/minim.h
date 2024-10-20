@@ -89,6 +89,7 @@ extern obj Mtrue;
 extern obj Mfalse;
 extern obj Mvoid;
 extern obj Meof;
+extern obj Mvalues;
 extern obj Munbound;
 
 #define Mnullp(x)       ((x) == Mnull)
@@ -96,6 +97,7 @@ extern obj Munbound;
 #define Mfalsep(x)      ((x) == Mfalse)
 #define Mvoidp(x)       ((x) == Mvoid)
 #define Meofp(x)        ((x) == Meof)
+#define Mvaluesp(x)     ((x) == Mvalues)
 #define Munboundp(x)    ((x) == Munbound)
 
 #define Mnot(x)         (Mfalsep(x) ? Mtrue : Mfalse)
@@ -307,17 +309,19 @@ void port_write(int c, obj p);
 // Thread context
 // +------------+
 // |    type    | [0, 1)
-// |    cc      | [8, 16)
+// |    cc      | [8, 16)       // current continuation
 // |    env     | [16, 24)
-// |    vb      | [24, 32)
-// |    vc      | [32, 40)
+// |    vb      | [24, 32)      // values buffer
+// |    va      | [24, 32)      // values buffer allocation size
+// |    vc      | [32, 40)      // values buffer count
 // +------------+
-#define Mtc_size            (5 * ptr_size)
+#define Mtc_size            (6 * ptr_size)
 #define Mtcp(o)             (obj_type(o) == THREAD_OBJ_TYPE)
 #define Mtc_cc(o)           (*((obj*) ptr_add(o, ptr_size)))
 #define Mtc_env(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
 #define Mtc_vb(o)           (*((obj**) ptr_add(o, 3 * ptr_size)))
-#define Mtc_vc(o)           (*((uptr*) ptr_add(o, 4 * ptr_size)))
+#define Mtc_va(o)           (*((uptr*) ptr_add(o, 4 * ptr_size)))
+#define Mtc_vc(o)           (*((uptr*) ptr_add(o, 5 * ptr_size)))
 
 obj Mthread_context(void);
 
@@ -390,10 +394,6 @@ size_t hash_bytes(const void *data, size_t len);
 void init_prims(void);
 obj prim_env(obj env);
 
-obj nullp_proc(obj x);
-obj car_proc(obj x);
-obj cdr_proc(obj x);
-
 // Evaluation
 
 int Mimmediatep(obj x);
@@ -414,6 +414,28 @@ void write_obj(FILE *out, obj o);
     write_obj(out, o); \
     fputc('\n', out); \
 }
+
+// Prims
+
+extern obj nullp_prim;
+extern obj cons_prim;
+extern obj car_prim;
+extern obj cdr_prim;
+
+extern obj fx_neg_prim;
+extern obj fx_inc_prim;
+extern obj fx_dec_prim;
+extern obj fx_add_prim;
+extern obj fx_sub_prim;
+extern obj fx_mul_prim;
+extern obj fx_div_prim;
+extern obj fx_eq_prim;
+extern obj fx_ge_prim;
+extern obj fx_le_prim;
+extern obj fx_gt_prim;
+extern obj fx_lt_prim;
+
+extern obj values_prim;
 
 // Errors
 

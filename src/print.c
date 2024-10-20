@@ -53,6 +53,8 @@ void write_obj(FILE *out, obj o) {
         fputs("#<unbound>", out);
     } else if (Msymbolp(o)) {
         fputs(Msymbol_value(o), out);
+    } else if (Mvaluesp(o)) {
+        fputs("#<mvvalues>", out);
     } else if (Mfixnump(o)) {
         fprintf(out, "%ld", Mfixnum_value(o));
     } else if (Mcharp(o)) {

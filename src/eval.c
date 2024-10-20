@@ -14,6 +14,31 @@ NORETURN void raise_arity_exn(obj prim, obj args) {
     minim_error2(Mprim_name(prim), "arity mismatch", Mfixnum(Mprim_arity(prim)), Mlength(args));
 }
 
+static void do_values(obj args) {
+    obj tc;
+    iptr vc, i;
+
+    // check if safe to write to buffer
+    tc = Mcurr_tc();
+    if (Mtc_vc(tc) != 0) {
+        minim_error1("do_values()", "values buffer is not empty", args);
+    }
+    
+    // check if we need to reallocate
+    vc = list_length(args);
+    if (vc >= Mtc_va(tc)) {
+        Mtc_va(tc) = 2 * vc;
+        Mtc_vb(tc) = GC_malloc(Mtc_va(tc) * sizeof(obj));
+    }
+
+    // fill the buffer
+    Mtc_vc(tc) = vc;
+    for (i = 0; i < vc; i++) {
+        Mtc_vb(tc)[i] = Mcar(args);
+        args = Mcdr(args);
+    }
+}
+
 static obj do_prim(obj f, obj args) {
     obj (*fn)() = Mprim_value(f);
 
@@ -261,7 +286,13 @@ loop:
 
 do_app:
     if (Mprimp(f)) {
-        x = do_prim(f, args);
+        if (f == values_prim) {
+            do_values(args);
+            x = Mvalues;
+        } else {
+            x = do_prim(f, args);
+        }
+
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
         goto do_k;
     } else if (Mclosurep(f)) {
