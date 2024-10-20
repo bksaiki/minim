@@ -354,12 +354,10 @@ do_app:
             x = do_prim(f, args);
         }
 
-        Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
         goto do_k;
     } else if (Mclosurep(f)) {
         e = Mclosure_body(f);
         Mtc_env(tc) = do_closure(f, args);
-        Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
         goto loop;
     } else if (Mcontinuationp(f)) {
         Mtc_cc(tc) = continuation_restore(Mtc_cc(tc), f);
@@ -380,13 +378,13 @@ do_k:
     case APP_CONT_TYPE:
         x = force_single_value(x);
         clear_values_buffer(tc);
-        Mtc_vc(tc) = 0;
         Mtc_cc(tc) = do_arg(tc, x);
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         if (Mnullp(Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))))) {
             // evaluated last argument
             f = Mcar(Mcontinuation_app_hd(Mtc_cc(tc)));
             args = Mcdr(Mcontinuation_app_hd(Mtc_cc(tc)));
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_app;
         } else {
             // still evaluating arguments
@@ -434,6 +432,7 @@ do_k:
         check_callcc(f);
         args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+        Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
         goto do_app;
     
     // call-with-values expressions
@@ -457,17 +456,19 @@ do_k:
             }
 
             Mcontinuation_callwv_consumer(Mtc_cc(tc)) = x;
-
             f = Mcontinuation_callwv_producer(Mtc_cc(tc));
             args = Mnull;
+    
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), Mnull); // dummy continuation
             goto do_app;
         } else {
             // evaluated producer procedure
             f = Mcontinuation_callwv_consumer(Mtc_cc(tc));
             args = do_call_with_values();
             clear_values_buffer(tc);
+
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_app;
         }
 
