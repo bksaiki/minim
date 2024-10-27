@@ -16,7 +16,9 @@ obj Mcallwv_symbol;
 obj Mif_symbol;
 obj Mlambda_symbol;
 obj Mlet_symbol;
+obj Mlet_values_symbol;
 obj Mletrec_symbol;
+obj Mletrec_values_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
 
@@ -51,7 +53,9 @@ void minim_init(void) {
     Mif_symbol = Mintern("if");
     Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");
+    Mlet_values_symbol = Mintern("let-values");
     Mletrec_symbol = Mintern("letrec");
+    Mletrec_values_symbol = Mintern("letrec-values");
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
 

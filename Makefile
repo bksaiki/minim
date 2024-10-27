@@ -3,7 +3,7 @@ GC_DIR = bdwgc
 SRC_DIR = src
 TEST_DIR = tests
 
-CFLAGS ?= -Wall -std=c11 -O3 -g
+CFLAGS ?= -g -Wall -std=c11 -O3 -march=native
 DEPFLAGS ?= -MMD -MP
 INCFLAGS ?= -I$(GC_DIR)/include
 LDFLAGS ?= -L$(BUILD_DIR) -lgc

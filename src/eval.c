@@ -18,22 +18,16 @@ static void clear_values_buffer(obj tc) {
     Mtc_vc(tc) = 0;
 }
 
-static obj force_single_value(obj x) {
-    obj tc;
-
+static void assert_single_value(obj tc, obj x) {
     if (Mvaluesp(x)) {
-        tc = Mcurr_tc();
-        if (Mtc_vc(tc) != 1) {
-            minim_error2(NULL, "values mismatch", Mfixnum(1), Mfixnum(Mtc_vc(tc)));
-        } else {
-            return Mtc_vb(tc)[0];
-        }
-    } else {
-        return x;
+        minim_error2(NULL, "values mismatch", Mfixnum(1), Mfixnum(Mtc_vc(tc)));
     }
 }
 
-static void do_values(obj args) {
+// performs `values` primitive
+// if there is only 1 argument, the argument is returned
+// otherwise, the arguments are written to the values buffer
+static obj do_values(obj args) {
     obj tc;
     iptr vc, i;
 
@@ -42,36 +36,51 @@ static void do_values(obj args) {
     if (Mtc_vc(tc) != 0) {
         minim_error1("do_values()", "values buffer is not empty", args);
     }
-    
-    // check if we need to reallocate
-    vc = list_length(args);
-    if (vc >= Mtc_va(tc)) {
-        Mtc_va(tc) = 2 * vc;
-        Mtc_vb(tc) = GC_malloc(Mtc_va(tc) * sizeof(obj));
-    }
 
-    // fill the buffer
-    Mtc_vc(tc) = vc;
-    for (i = 0; i < vc; i++) {
-        Mtc_vb(tc)[i] = Mcar(args);
-        args = Mcdr(args);
+    // check if can just return the values
+    vc = list_length(args);
+    if (vc == 1) {
+        return Mcar(args);
+    } else { 
+        // check if we need to reallocate
+        if (vc >= Mtc_va(tc)) {
+            Mtc_va(tc) = 2 * vc;
+            Mtc_vb(tc) = GC_malloc(Mtc_va(tc) * sizeof(obj));
+        }
+
+        // fill the buffer
+        Mtc_vc(tc) = vc;
+        for (i = 0; i < vc; i++) {
+            Mtc_vb(tc)[i] = Mcar(args);
+            args = Mcdr(args);
+        }
+
+        return Mvalues;
     }
 }
 
-static obj do_call_with_values(void) {
+// converts the values buffer to a list
+static obj values_to_list(void) {
     obj tc, hd, tl;
     uptr vc, i;
 
     tc = Mcurr_tc();
     vc = Mtc_vc(tc);
-    if (vc == 0) {
+    switch (vc)
+    {
+    case 0:
+        // null values
         return Mnull;
-    } else if (vc == 1) {
+    
+    case 1:
+        // single values
         return Mlist1(Mtc_vb(tc)[0]);
-    } else {
-        hd = tl = Mcons(Mtc_vb(tc)[0], Mnull);
-        for (i = 1; i < vc; i++) {
-            Mcdr(tl) = Mcons(Mtc_vb(tc)[i], Mnull);
+
+    default:
+        // multiple values
+        hd = tl = Mlist1(Mtc_vb(tc)[0]);
+        for (i = 1; i < vc; ++i) {
+            Mcdr(tl) = Mlist1(Mtc_vb(tc)[i]);
             tl = Mcdr(tl);
         }
 
@@ -195,15 +204,36 @@ static obj do_begin(obj tc) {
     return Mcar(x);
 }
 
-static obj do_let(obj tc, obj v) {
-    obj k, env, binds;
+static void check_let_arity(obj tc, obj ids, obj v) {
+    iptr len, expect;
 
-    k = continuation_mutable(Mtc_cc(tc));
+    expect = Mvaluesp(v) ? Mtc_vc(tc) : 1;
+    len = list_length(ids);
+    if (len != expect) {
+        minim_error2(NULL, "result arity mismatch", Mfixnum(len), Mfixnum(expect));
+    }
+}
+
+static obj do_let(obj tc, obj v) {
+    obj k, env, binds, ids;
+
+    k = Mtc_cc(tc);
     env = Mcontinuation_let_env(k);
     binds = Mcontinuation_let_bindings(k);
-    
-    // add result using first binding
-    env_insert(env, Mcaar(binds), v);
+
+    // check that we have enough ids
+    ids = Mcaar(binds);
+    check_let_arity(tc, ids, v);
+
+    // bind values
+    if (Mvaluesp(v)) {
+        v = values_to_list();
+        clear_values_buffer(tc);
+        for (; !Mnullp(ids); ids = Mcdr(ids), v = Mcdr(v))
+            env_insert(env, Mcar(ids), Mcar(v));
+    } else {
+        env_insert(env, Mcar(ids), v);
+    }
 
     binds = Mcdr(binds);
     if (Mnullp(binds)) {
@@ -213,6 +243,7 @@ static obj do_let(obj tc, obj v) {
         return Mcontinuation_let_body(k);
     } else {
         // at least one more binding
+        k = continuation_mutable(k);
         Mcontinuation_let_bindings(k) = binds;
         Mtc_env(tc) = Mcontinuation_env(k);
         Mtc_cc(tc) = k;
@@ -274,8 +305,8 @@ loop:
     if (Mconsp(e)) {
         // cons => syntax or application
         hd = Mcar(e);
-        if (hd == Mlet_symbol) {
-            // let
+        if (hd == Mlet_values_symbol) {
+            // let-values
             Mtc_cc(tc) = Mlet_continuation(Mtc_cc(tc), Mtc_env(tc), Mcadr(e), Mcaddr(e));
             e = Mcadar(Mcontinuation_let_bindings(Mtc_cc(tc)));
             goto loop;
@@ -348,8 +379,7 @@ loop:
 do_app:
     if (Mprimp(f)) {
         if (f == values_prim) {
-            do_values(args);
-            x = Mvalues;
+            x = do_values(args);
         } else {
             x = do_prim(f, args);
         }
@@ -361,8 +391,7 @@ do_app:
         goto loop;
     } else if (Mcontinuationp(f)) {
         Mtc_cc(tc) = continuation_restore(Mtc_cc(tc), f);
-        do_values(args);
-        x = Mvalues;
+        x = do_values(args);
         goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
@@ -376,8 +405,7 @@ do_k:
 
     // applications
     case APP_CONT_TYPE:
-        x = force_single_value(x);
-        clear_values_buffer(tc);
+        assert_single_value(Mtc_cc(tc), x);
         Mtc_cc(tc) = do_arg(tc, x);
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         if (Mnullp(Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))))) {
@@ -394,8 +422,7 @@ do_k:
 
     // if expressions
     case COND_CONT_TYPE:
-        x = force_single_value(x);
-        clear_values_buffer(tc);
+        assert_single_value(Mtc_cc(tc), x);
         Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         e = Mfalsep(x) ? Mcontinuation_cond_iff(Mtc_cc(tc)) : Mcontinuation_cond_ift(Mtc_cc(tc));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
@@ -410,16 +437,13 @@ do_k:
     
     // let expressions
     case LET_CONT_TYPE:
-        x = force_single_value(x);
-        clear_values_buffer(tc);
         e = do_let(tc, x);
         goto loop;
 
     // set! expressions
     case SETB_CONT_TYPE:
         // update binding, result is void
-        x = force_single_value(x);
-        clear_values_buffer(tc);
+        assert_single_value(Mtc_cc(tc), x);
         do_setb(tc, Mcontinuation_setb_name(Mtc_cc(tc)), x);
         x = Mvoid;
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
@@ -427,9 +451,10 @@ do_k:
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        f = force_single_value(x);
-        clear_values_buffer(tc);
-        check_callcc(f);
+        assert_single_value(Mtc_cc(tc), x);
+        check_callcc(x);
+
+        f = x;
         args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
@@ -439,18 +464,16 @@ do_k:
     case CALLWV_CONT_TYPE:
         if (Mfalsep(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
             // evaluated producer syntax
-            f = force_single_value(x);
-            clear_values_buffer(tc);
-            check_callwv_producer(f);
+            assert_single_value(Mtc_cc(tc), x);
+            check_callwv_producer(x);
 
-            Mcontinuation_callwv_producer(Mtc_cc(tc)) = f;
+            Mcontinuation_callwv_producer(Mtc_cc(tc)) = x;
             e = Mcontinuation_callwv_consumer(Mtc_cc(tc));
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             goto loop;
         } else if (!Mprocp(Mcontinuation_callwv_consumer(Mtc_cc(tc)))) {
             // evaluated consumer syntax
-            x = force_single_value(x);
-            clear_values_buffer(tc);
+            assert_single_value(Mtc_cc(tc), x);
             if (!Mprocp(x)) {
                 minim_error1("call-with-values", "expected a procedure", x);
             }
@@ -464,8 +487,12 @@ do_k:
         } else {
             // evaluated producer procedure
             f = Mcontinuation_callwv_consumer(Mtc_cc(tc));
-            args = do_call_with_values();
-            clear_values_buffer(tc);
+            if (Mvaluesp(x)) {
+                args = values_to_list();
+                clear_values_buffer(tc);
+            } else {
+                args = Mlist1(x);
+            }
 
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));

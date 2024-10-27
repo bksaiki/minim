@@ -103,6 +103,20 @@ int test_values(void) {
     return passed;
 }
 
+int test_letvalues(void) {
+    passed = 1;
+
+    check_equal("(let-values () 1)", "1");
+    check_equal("(let-values ([() (values)]) 1)", "1");
+    check_equal("(let-values ([(x) 1]) x)", "1");
+    check_equal("(let-values ([(x y) (values 1 2)]) (list x y))", "(1 2)");
+    check_equal("(let-values ([(x y z) (values 1 2 3)]) (list x y z))", "(1 2 3)");
+    check_equal("(let-values ([(x) 1] [(y) 2]) (list x y))", "(1 2)");
+    check_equal("(let-values ([() (values)] [(x) 1] [(y z) (values 2 3)]) (list x y z))", "(1 2 3)");
+
+    return passed;
+}
+
 int test_let(void) {
     passed = 1;
 
@@ -221,6 +235,7 @@ int main(int argc, char **argv) {
     log_test("if", test_if);
     log_test("begin", test_begin);
     log_test("values", test_values);
+    // log_test("let-values", test_letvalues);
     log_test("let", test_let);
     log_test("letrec", test_letrec);
     log_test("let (loop)", test_let_loop);

@@ -69,6 +69,39 @@ static void check_setb(obj e) {
         bad_syntax_exn(e);
 }
 
+// Already assumes `expr` is `(let-values . <???>)`
+// Check: `expr` must be `(let-values ([(<var> ...) <val>] ...) <body> ...)`
+// Does not check if each `<body>` is an expression.
+// Does not check if `<body> ...` forms a list.
+static void check_let_values(obj e) {
+    obj rib, bindings, bind, id;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib) && !Mconsp(Mcdr(rib)))
+        bad_syntax_exn(e);
+
+    bindings = Mcar(rib);
+    while (Mconsp(bindings)) {
+        bind = Mcar(bindings);
+        if (!Mconsp(bind))
+            bad_syntax_exn(e);
+
+        id = Mcar(bind);
+        assert_identifier(e, id);
+
+        writeln_object(stdout, id);
+
+        bind = Mcdr(bind);
+        if (!Mconsp(bind) || !Mnullp(Mcdr(bind)))
+            bad_syntax_exn(e);
+
+        bindings = Mcdr(bindings);
+    }
+
+    if (!Mnullp(bindings))
+        bad_syntax_exn(e);
+}
+
 // Already assumes `expr` is `(let . <???>)`
 // Check: `expr` must be `(let ([<var> <val>] ...) <body> ...)`
 // Does not check if each `<body>` is an expression.
@@ -185,6 +218,12 @@ void check_expr(obj e) {
                 check_expr(Mcar(it));
         } else if (hd == Mletrec_symbol) {
             check_letrec(e);
+            for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcadar(it));
+            for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
+        } else if (hd == Mlet_values_symbol) {
+            check_let_values(e);
             for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcadar(it));
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))

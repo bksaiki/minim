@@ -12,17 +12,23 @@ static obj condense_body(obj es) {
     }
 }
 
+// (let ([<id> <expr>]) ...) <body>)
+// => (let-values ([(<id>) <expr>]) ...) <body>)
+//
+// (let ([<id> <expr>]) ...) <body> ...)
+// => (let-values ([(<id>) <expr>]) ...) (begin <body> ...)
 static obj expand_let_expr(obj e) {
-    obj it, hd, tl;
+    obj it, hd, tl, bind;
 
     it = Mcadr(e);
-    hd = tl = Mcons(Mlist2(Mcaar(it), expand_expr(Mcadar(it))), Mnull);
+    hd = tl = Mlist1(Mlist2(Mlist1(Mcaar(it)), expand_expr(Mcadar(it))));
     for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
-        Mcdr(tl) = Mcons(Mlist2(Mcaar(it), expand_expr(Mcadar(it))), Mnull);
+        bind = Mlist2(Mlist1(Mcaar(it)), expand_expr(Mcadar(it)));
+        Mcdr(tl) = Mlist1(bind);
         tl = Mcdr(tl);
     }
 
-    return Mlist3(Mlet_symbol, hd, condense_body(Mcddr(e)));
+    return Mlist3(Mlet_values_symbol, hd, condense_body(Mcddr(e)));
 }
 
 // (let <name> ([<id> <expr>]) ...)
