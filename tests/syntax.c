@@ -157,9 +157,9 @@ int test_letrec(void) {
     check_equal("(letrec ([x 1] [y 2] [z 3]) (cons x (cons y z)))", "(1 2 . 3)");
 
     check_equal("(letrec ([x 1] [y x]) y)", "1");
-    check_equal("(letrec ([f (lambda () f)]) (f))", "#<procedure>");
-    check_equal("(letrec ([f (lambda () f)] [g (lambda () f)]) (g))", "#<procedure>");
-    check_equal("(letrec ([f (lambda () g)] [g (lambda () f)]) (g))", "#<procedure>");
+    check_equal("(letrec ([f (lambda () f)]) (f))", "#<procedure:f>");
+    check_equal("(letrec ([f (lambda () f)] [g (lambda () f)]) (g))", "#<procedure:f>");
+    check_equal("(letrec ([f (lambda () g)] [g (lambda () f)]) (g))", "#<procedure:f>");
 
     return passed;
 }

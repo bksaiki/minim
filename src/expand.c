@@ -129,14 +129,14 @@ static obj expand_let_expr(obj e) {
     obj it, hd, tl, bind;
 
     it = Mcadr(e);
-    hd = tl = Mlist1(Mlist2(Mlist1(Mcaar(it)), expand_expr(Mcadar(it))));
+    hd = tl = Mlist1(Mlist2(Mlist1(Mcaar(it)), Mcadar(it)));
     for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
-        bind = Mlist2(Mlist1(Mcaar(it)), expand_expr(Mcadar(it)));
+        bind = Mlist2(Mlist1(Mcaar(it)), Mcadar(it));
         Mcdr(tl) = Mlist1(bind);
         tl = Mcdr(tl);
     }
 
-    return Mlist3(Mlet_values_symbol, hd, condense_body(Mcddr(e)));
+    return Mcons(Mlet_values_symbol, Mcons(hd, Mcddr(e)));
 }
 
 // (let <name> ([<id> <expr>]) ...)
@@ -227,7 +227,8 @@ loop:
                 return condense_body(Mcddr(e));
             } else {
                 // at least one binding
-                return expand_let_expr(e);
+                e = expand_let_expr(e);
+                goto loop;
             }
         } else if (hd == Mletrec_symbol) {
             // letrec => transforms to let

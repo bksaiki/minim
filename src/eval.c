@@ -229,9 +229,14 @@ static obj do_let(obj tc, obj v) {
     if (Mvaluesp(v)) {
         v = values_to_list();
         clear_values_buffer(tc);
-        for (; !Mnullp(ids); ids = Mcdr(ids), v = Mcdr(v))
+        for (; !Mnullp(ids); ids = Mcdr(ids), v = Mcdr(v)) {
+            if (Mclosurep(Mcar(v)) && Mfalsep(Mclosure_name(Mcar(v))))
+                Mclosure_name(Mcar(v)) = Mcar(ids);
             env_insert(env, Mcar(ids), Mcar(v));
+        }
     } else {
+        if (Mclosurep(v) && Mfalsep(Mclosure_name(v)))
+            Mclosure_name(v) = Mcar(ids);
         env_insert(env, Mcar(ids), v);
     }
 
@@ -259,6 +264,8 @@ static void do_setb(obj tc, obj x, obj v) {
     if (Mfalsep(cell)) {
         minim_error1("set!", "unbound variable", x);
     } else {
+        if (Mclosurep(v) && Mfalsep(Mclosure_name(v)))
+            Mclosure_name(v) = x;
         Mcdr(cell) = v;
     }
 }
@@ -524,10 +531,6 @@ obj eval_expr(obj e) {
     e = expand_expr(e);
     Mtc_cc(tc) = Mnull_continuation(env);
     v = eval_k(e);
-
-    // if the result is #<mvvalues> with only one value, pop it out
-    if (Mvaluesp(v) && Mtc_vc(tc) == 1)
-        v = Mtc_vb(tc)[0];
 
     // restore old continuation and environment
     Mtc_cc(tc) = k;
