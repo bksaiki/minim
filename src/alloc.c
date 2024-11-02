@@ -205,6 +205,17 @@ obj Mdynwind_continuation(obj prev, obj env, obj val, obj post) {
     return x;
 }
 
+obj Mwinders_continuation(obj prev, obj env, obj winders) {
+    obj x = GC_malloc(Mcontinuation_winders_size);
+    obj_type(x) = CONTINUATON_OBJ_TYPE;
+    Mcontinuation_type(x) = WINDERS_CONT_TYPE;
+    Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_prev(x) = prev;
+    Mcontinuation_env(x) = env;
+    Mcontinuation_winders_value(x) = winders;
+    return x;
+}
+
 obj Mthread_context(void) {
     obj x = GC_malloc(Mtc_size);
     obj_type(x) = THREAD_OBJ_TYPE;

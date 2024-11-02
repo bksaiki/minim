@@ -246,7 +246,8 @@ typedef enum {
     SETB_CONT_TYPE,
     CALLCC_CONT_TYPE,
     CALLWV_CONT_TYPE,
-    DYNWIND_CONT_TYPE
+    DYNWIND_CONT_TYPE,
+    WINDERS_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_null_size     Mcontinuation_size(0)
@@ -284,16 +285,20 @@ typedef enum {
 #define Mcontinuation_callwv_producer(o)        (*((obj*) ptr_add(o, 3 * ptr_size)))
 #define Mcontinuation_callwv_consumer(o)        (*((obj*) ptr_add(o, 4 * ptr_size)))
 
-#define Mcontinuation_dynwind_size              Mcontinuation_size(4)
-#define Mcontinuation_dynwindp(o)               (Mcontinuation_type(o) == DYNWIND_CONT_TYPE)
-#define Mcontinuation_dynwind_pre(o)            (*((obj*) ptr_add(o, 3 * ptr_size)))
-#define Mcontinuation_dynwind_val(o)            (*((obj*) ptr_add(o, 4 * ptr_size)))
-#define Mcontinuation_dynwind_post(o)           (*((obj*) ptr_add(o, 5 * ptr_size)))
+#define Mcontinuation_dynwind_size          Mcontinuation_size(4)
+#define Mcontinuation_dynwindp(o)           (Mcontinuation_type(o) == DYNWIND_CONT_TYPE)
+#define Mcontinuation_dynwind_pre(o)        (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_dynwind_val(o)        (*((obj*) ptr_add(o, 4 * ptr_size)))
+#define Mcontinuation_dynwind_post(o)       (*((obj*) ptr_add(o, 5 * ptr_size)))
 #define DYNWIND_NEW     0x0
 #define DYNWIND_PRE     0x1
 #define DYNWIND_VAL     0x2
 #define DYNWIND_POST    0x3
 #define Mcontinuation_dynwind_state(o)          (*((byte*) ptr_add(o, 6 * ptr_size)))
+
+#define Mcontinuation_winders_size          Mcontinuation_size(1)
+#define Mcontinuation_windersp(o)           (Mcontinuation_type(o) == WINDERS_CONT_TYPE)
+#define Mcontinuation_winders_value(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
@@ -304,6 +309,7 @@ obj Msetb_continuation(obj prev, obj env, obj name);
 obj Mcallcc_continuation(obj prev, obj env);
 obj Mcallwv_continuation(obj prev, obj env, obj producer);
 obj Mdynwind_continuation(obj prev, obj env, obj val, obj post);
+obj Mwinders_continuation(obj prev, obj env, obj winders);
 
 // Port 
 // +------------+
@@ -390,6 +396,8 @@ obj Mfx_lt(obj x, obj y);
 int Mlistp(obj x);
 iptr list_length(obj x);
 obj Mlength(obj x);
+obj Mreverse(obj x);
+obj Mappend(obj x, obj y);
 
 // Continuations
 

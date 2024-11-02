@@ -122,7 +122,7 @@ static obj common_tail(obj k1, obj k2) {
     l2 = continuation_length(k2);
     if (l1 > l2) {
         k1 = continuation_tail(k1, l1 - l2);
-    } else  if (l2 > l1) {
+    } else if (l2 > l1) {
         k2 = continuation_tail(k2, l2 - l1);
     }
 
@@ -142,38 +142,40 @@ static obj common_tail(obj k1, obj k2) {
 // The result is a new continuation chain formed by merging
 // the common ancestors of the continuation and current continuation.
 obj continuation_restore(obj cc, obj k) {
-    obj tl, re;
+    obj tl, it, cc_winders, k_winders, winders;
     
     tl = common_tail(cc, k);
-    if (!Mcontinuationp(tl)) {
-        // fully unwound, just reinstate `k` fully
-        return k;
-    } else if (tl == k) {
-        // `tl` is `k` so just return it
+    if (tl == k) {
+        // edge case: `tl` is just `k` so nothing to do
         return tl;
-    } else {
-        // found a common tail, reinstate `k` up to that point
-        // we can assume that `tl` is immutable since `k` must be
-        // captured by `call/cc` (and variants)
-        if (!Mcontinuation_immutablep(tl))
-            minim_error1("continuation_restore", "must be immutable", tl);
-
-        // reinstated continuation:
-        // walk back to the common tail, track winders, and stash each frame
-        re = Mcons(continuation_mutable(k), Mnull);
-        for (k = Mcontinuation_prev(k); k != tl; k = Mcontinuation_prev(k)) {
-            re = Mcons(continuation_mutable(k), re);
-        }
-
-        // reinstate the frames and link them
-        k = tl;
-        for (; !Mnullp(re); re = Mcdr(re)) {
-            Mcontinuation_prev(Mcar(re)) = k;
-            k = Mcar(re);
-        }
-
-        return k;
     }
+    
+    // unwind `cc` to the tail and restore `k`
+    // need to track winders and possibly create a continuation to execute them
+    cc_winders = Mnull;
+    for (it = cc; it != tl; it = Mcontinuation_prev(it)) {
+        if (Mcontinuation_dynwindp(it) && Mcontinuation_dynwind_state(it) == DYNWIND_VAL) {            
+            // unwinding active dynamic wind => need to execute post thunk
+            cc_winders = Mcons(Mcontinuation_dynwind_post(it), cc_winders);
+        }
+    }
+
+    k_winders = Mnull;
+    for (it = k; it != tl; it = Mcontinuation_prev(it)) {
+        if (Mcontinuation_dynwindp(cc) && Mcontinuation_dynwind_state(cc) == DYNWIND_VAL) {            
+            // restoring active dynamic wind => need to execute pre thunk
+            k_winders = Mcons(Mcontinuation_dynwind_pre(it), k_winders);
+        }
+    }
+
+    // cc_winders first, in reverse order, then k_winders
+    winders = Mappend(Mreverse(cc_winders), k_winders);
+    if (!Mnullp(winders)) {
+        // any winders => need to execute them before anything else
+        k = Mwinders_continuation(k, Mcontinuation_env(k), winders);
+    }
+   
+    return k;
 }
 
 // For debugging
