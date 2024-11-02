@@ -240,6 +240,15 @@ int test_callcc(void) {
     return passed;
 }
 
+int test_dynamic_wind(void) {
+    passed = 1;
+
+    check_equal("(dynamic-wind (lambda () 1) (lambda () 2) (lambda () 3))", "2");
+
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -258,6 +267,7 @@ int main(int argc, char **argv) {
     log_test("lambda", test_lambda);
     log_test("set!", test_setb);
     log_test("call/cc", test_callcc);
+    log_test("dynamic-wind", test_dynamic_wind);
 
     minim_shutdown(return_code);
 }

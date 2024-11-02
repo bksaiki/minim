@@ -77,6 +77,18 @@ obj continuation_mutable(obj k) {
             k2 = Mcallcc_continuation(Mcontinuation_prev(k), Mcontinuation_env(k));
             break;
 
+        // dynamic-wind expressions
+        case DYNWIND_CONT_TYPE:
+            k2 = Mdynwind_continuation(
+                Mcontinuation_prev(k),
+                Mcontinuation_env(k),
+                Mcontinuation_dynwind_val(k),
+                Mcontinuation_dynwind_post(k)    
+            );
+            Mcontinuation_dynwind_pre(k2) = Mcontinuation_dynwind_pre(k);
+            Mcontinuation_dynwind_state(k2) = Mcontinuation_dynwind_state(k);
+            break;
+
         default:
             minim_error1("continuation_pop", "unimplemented", Mfixnum(Mcontinuation_type(k)));
         }
@@ -146,13 +158,12 @@ obj continuation_restore(obj cc, obj k) {
         if (!Mcontinuation_immutablep(tl))
             minim_error1("continuation_restore", "must be immutable", tl);
 
-        // walk back to the common tail and track the frames (must be >=1)
+        // reinstated continuation:
+        // walk back to the common tail, track winders, and stash each frame
         re = Mcons(continuation_mutable(k), Mnull);
         for (k = Mcontinuation_prev(k); k != tl; k = Mcontinuation_prev(k)) {
             re = Mcons(continuation_mutable(k), re);
         }
-
-        // fprintf(stderr, "reinstating %lu frames (%lu saved)\n", list_length(re), continuation_length(tl));
 
         // reinstate the frames and link them
         k = tl;

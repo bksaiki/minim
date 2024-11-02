@@ -286,19 +286,19 @@ static void check_callcc(obj f) {
     }
 }
 
-static void check_callwv_producer(obj f) {
+static void assert_thunk(const char *name, obj f) {
     if (Mprimp(f)) {
         iptr arity = Mprim_arity(f);
-        if (arity < 0 ? arity < -1 : arity != 0)
-            minim_error1("call-with-values", "expected a procedure of at least 0 argument", f);
+        if (arity < 0 ? arity != -1 : arity != 0)
+            minim_error1(name, "expected a procedure of at least 0 argument", f);
     } else if (Mclosurep(f)) {
         iptr arity = Mclosure_arity(f);
         if (arity < 0 ? arity < -1 : arity != 0)
-            minim_error1("call-with-values", "expected a procedure of at least 0 argument", f);
+            minim_error1(name, "expected a procedure of at least 0 argument", f);
     } else if (Mcontinuationp(f)) {
         // do nothing
     } else {
-        minim_error1("call-with-values", "expected a procedure", f);
+        minim_error1(name, "expected a procedure", f);
     }
 }
 
@@ -350,6 +350,11 @@ loop:
         } else if (hd == Mcallwv_symbol) {
             // call-with-values
             Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
+            e = Mcadr(e);
+            goto loop;
+        } else if (hd == Mdynwind_symbol) {
+            // dynamic-wind
+            Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e), Mcar(Mcdddr(e)));
             e = Mcadr(e);
             goto loop;
         } else {
@@ -473,7 +478,7 @@ do_k:
         if (Mfalsep(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
             // evaluated producer syntax
             assert_single_value(Mtc_cc(tc), x);
-            check_callwv_producer(x);
+            assert_thunk("call-with-values", x);
 
             Mcontinuation_callwv_producer(Mtc_cc(tc)) = x;
             e = Mcontinuation_callwv_consumer(Mtc_cc(tc));
@@ -507,6 +512,76 @@ do_k:
             goto do_app;
         }
 
+    // dynamic-wind expressions
+    case DYNWIND_CONT_TYPE:
+        switch (Mcontinuation_dynwind_state(Mtc_cc(tc))) {
+        // unevaluated dynamic-wind
+        case DYNWIND_NEW:
+            if (Mfalsep(Mcontinuation_dynwind_pre(Mtc_cc(tc)))) {
+                // evaluating pre thunk expression
+                assert_single_value(Mtc_cc(tc), x);
+                assert_thunk("dynamic-wind", x);
+                Mcontinuation_dynwind_pre(Mtc_cc(tc)) = x;
+
+                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+                e = Mcontinuation_dynwind_val(Mtc_cc(tc));
+                goto loop;
+            } else if (!Mprocp(Mcontinuation_dynwind_val(Mtc_cc(tc)))) {
+                // evaluating value thunk expression
+                assert_single_value(Mtc_cc(tc), x);
+                assert_thunk("dynamic-wind", x);
+                Mcontinuation_dynwind_val(Mtc_cc(tc)) = x;
+
+                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+                e = Mcontinuation_dynwind_post(Mtc_cc(tc));
+                goto loop;
+            } else {
+                // evaluating post thunk expression
+                assert_single_value(Mtc_cc(tc), x);
+                assert_thunk("dynamic-wind", x);
+                Mcontinuation_dynwind_post(Mtc_cc(tc)) = x;
+                Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_PRE;
+
+                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+                f = Mcontinuation_dynwind_pre(Mtc_cc(tc));
+                args = Mnull;
+                goto do_app;
+            }
+
+        // evaluated pre thunk
+        case DYNWIND_PRE:
+            assert_single_value(Mtc_cc(tc), x);
+            Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_VAL;
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            f = Mcontinuation_dynwind_val(Mtc_cc(tc));
+            args = Mnull;
+            goto do_app;
+
+        // evaluated val thunk
+        case DYNWIND_VAL:
+            if (Mvaluesp(x)) {
+                Mcontinuation_dynwind_val(Mtc_cc(tc)) = values_to_list();
+                clear_values_buffer(tc);
+            } else {
+                Mcontinuation_dynwind_val(Mtc_cc(tc)) = Mlist1(x);
+            }
+            
+            Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_POST;
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            f = Mcontinuation_dynwind_post(Mtc_cc(tc));
+            args = Mnull;
+            goto do_app;
+
+        // evaluated post thunk
+        case DYNWIND_POST:
+            x = do_values(Mcontinuation_dynwind_val(Mtc_cc(tc)));
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
+            goto do_k;
+        
+        default:
+            minim_error("dynamic-wind", "unimplemented");
+        }
 
     // unknown
     default:

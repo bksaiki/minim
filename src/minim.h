@@ -56,6 +56,7 @@ typedef void            *obj;
 extern obj Mbegin_symbol;
 extern obj Mcallcc_symbol;
 extern obj Mcallwv_symbol;
+extern obj Mdynwind_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
@@ -244,7 +245,8 @@ typedef enum {
     LET_CONT_TYPE,
     SETB_CONT_TYPE,
     CALLCC_CONT_TYPE,
-    CALLWV_CONT_TYPE
+    CALLWV_CONT_TYPE,
+    DYNWIND_CONT_TYPE
 } cont_type_t;
 
 #define Mcontinuation_null_size     Mcontinuation_size(0)
@@ -271,13 +273,27 @@ typedef enum {
 #define Mcontinuation_let_body(o)       (*((obj*) ptr_add(o, 5 * ptr_size)))
 
 #define Mcontinuation_setb_size         Mcontinuation_size(1)
+#define Mcontinuation_setbp(o)          (Mcontinuation_type(o) == SETB_CONT_TYPE)
 #define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-#define Mcontinuation_callcc_size       Mcontinuation_size(0)
+#define Mcontinuation_callcc_size           Mcontinuation_size(0)
+#define Mcontinuation_callccp(o)            (Mcontinuation_type(o) == CALLCC_CONT_TYPE)
 
 #define Mcontinuation_callwv_size               Mcontinuation_size(2)
+#define Mcontinuation_callwvp(o)                (Mcontinuation_type(o) == CALLWV_CONT_TYPE)
 #define Mcontinuation_callwv_producer(o)        (*((obj*) ptr_add(o, 3 * ptr_size)))
 #define Mcontinuation_callwv_consumer(o)        (*((obj*) ptr_add(o, 4 * ptr_size)))
+
+#define Mcontinuation_dynwind_size              Mcontinuation_size(4)
+#define Mcontinuation_dynwindp(o)               (Mcontinuation_type(o) == DYNWIND_CONT_TYPE)
+#define Mcontinuation_dynwind_pre(o)            (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_dynwind_val(o)            (*((obj*) ptr_add(o, 4 * ptr_size)))
+#define Mcontinuation_dynwind_post(o)           (*((obj*) ptr_add(o, 5 * ptr_size)))
+#define DYNWIND_NEW     0x0
+#define DYNWIND_PRE     0x1
+#define DYNWIND_VAL     0x2
+#define DYNWIND_POST    0x3
+#define Mcontinuation_dynwind_state(o)          (*((byte*) ptr_add(o, 6 * ptr_size)))
 
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);
@@ -287,6 +303,7 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
 obj Mcallcc_continuation(obj prev, obj env);
 obj Mcallwv_continuation(obj prev, obj env, obj producer);
+obj Mdynwind_continuation(obj prev, obj env, obj val, obj post);
 
 // Port 
 // +------------+
