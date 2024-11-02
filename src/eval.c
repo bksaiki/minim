@@ -307,6 +307,7 @@ loop:
         hd = Mcar(e);
         if (hd == Mlet_values_symbol) {
             // let-values
+            // TODO: optimize for unbound
             Mtc_cc(tc) = Mlet_continuation(Mtc_cc(tc), Mtc_env(tc), Mcadr(e), Mcaddr(e));
             e = Mcadar(Mcontinuation_let_bindings(Mtc_cc(tc)));
             goto loop;

@@ -2,6 +2,8 @@
 
 #include "minim.h"
 
+static uptr gensym_counter;
+
 size_t bucket_sizes[] = {
     8209,
     16411,
@@ -140,4 +142,18 @@ obj intern(intern_table *tab, const char *s) {
     tab->size += 1;
 
     return x;
+}
+
+obj Mgensym(const char *s) {
+    obj o;
+    uptr n;
+    
+    n = snprintf(NULL, 0, "%s%ld\n", s, gensym_counter);
+    o = GC_malloc(Msymbol_size);
+    obj_type(o) = SYMBOL_OBJ_TYPE;
+    Msymbol_value(o) = GC_malloc_atomic((n + 1) * sizeof(char));
+    snprintf(Msymbol_value(o), n + 1, "%s%ld", s, gensym_counter);
+    gensym_counter++;
+
+    return o;
 }

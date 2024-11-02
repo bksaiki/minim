@@ -74,7 +74,7 @@ static void check_setb(obj e) {
 // Does not check if each `<body>` is an expression.
 // Does not check if `<body> ...` forms a list.
 static void check_let_values(obj e) {
-    obj rib, bindings, bind, id;
+    obj rib, bindings, bind, ids;
 
     rib = Mcdr(e);
     if (!Mconsp(rib) && !Mconsp(Mcdr(rib)))
@@ -86,10 +86,8 @@ static void check_let_values(obj e) {
         if (!Mconsp(bind))
             bad_syntax_exn(e);
 
-        id = Mcar(bind);
-        assert_identifier(e, id);
-
-        writeln_object(stdout, id);
+        for (ids = Mcar(bind); !Mnullp(ids); ids = Mcdr(ids)) 
+            assert_identifier(e, Mcar(ids));
 
         bind = Mcdr(bind);
         if (!Mconsp(bind) || !Mnullp(Mcdr(bind)))
@@ -222,7 +220,7 @@ void check_expr(obj e) {
                 check_expr(Mcadar(it));
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
-        } else if (hd == Mlet_values_symbol) {
+        } else if (hd == Mlet_values_symbol || hd == Mletrec_values_symbol) {
             check_let_values(e);
             for (it = Mcadr(e); !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcadar(it));

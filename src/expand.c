@@ -12,6 +12,114 @@ static obj condense_body(obj es) {
     }
 }
 
+// (let-values ([(id ...) <expr>] ...) <body> ...)
+// => (let-values ([(id ...) <expr>] ...) (begin <body>) 
+static obj expand_let_values_expr(obj e) {
+    obj it, hd, tl, bind;
+
+    it = Mcadr(e);
+    hd = tl = Mlist1(Mlist2(Mcaar(it), expand_expr(Mcadar(it))));
+    for (it = Mcdr(it); !Mnullp(it); it = Mcdr(it)) {
+        bind = Mlist2(Mcaar(it), expand_expr(Mcadar(it)));
+        Mcdr(tl) = Mlist1(bind);
+        tl = Mcdr(tl);
+    }
+
+    return Mlist3(Mlet_values_symbol, hd, condense_body(Mcddr(e)));
+}
+
+// ([(<id> ...) <expr>] ...)
+// =>
+// ([(<id>) #<unbound>] ...)
+static obj make_letrec_values_ids(obj bindings) {
+    obj hd, tl, ids, bind;
+
+    hd = Mnull;
+    tl = NULL;
+    for (; !Mnullp(bindings); bindings = Mcdr(bindings)) {
+        for (ids = Mcaar(bindings); !Mnullp(ids); ids = Mcdr(ids)) {
+            bind = Mlist2(Mlist1(Mcar(ids)), Mlist2(Mquote_symbol, Munbound));
+            if (tl) {
+                Mcdr(tl) = Mlist1(bind);
+                tl = Mcdr(tl);
+            } else {
+                hd = tl = Mlist1(bind);
+            }
+        }
+    }
+
+    return hd;
+}
+
+// Generates a list of temporary identifiers from a list
+// of identifiers. List must be non-empty.
+static obj make_letrec_values_tids(obj ids) {
+    obj hd, tl;
+
+    hd = tl = Mlist1(Mgensym("t"));
+    for (ids = Mcdr(ids); !Mnullp(ids); ids = Mcdr(ids)) {
+        Mcdr(tl) = Mlist1(Mgensym("t"));
+        tl = Mcdr(tl);
+    }
+
+    return hd;
+}
+
+// `[(<id> ...) <expr>]` and `<body> ...`
+// =>
+// (let-values ([(<tid> ...) <expr>])
+//   (set! <id> <tid>)
+// ...
+static obj make_letrec_values_set(obj binding) {
+    obj ids, e, tids, it, hd, tl;
+
+    ids = Mcar(binding);
+    e = Mcadr(binding);
+
+    if (Mnullp(ids)) {
+        return Mlist3(Mlet_values_symbol, Mlist1(Mlist2(ids, e)), Mlist2(Mquote_symbol, Mvoid));
+    } else {
+        tids = make_letrec_values_tids(ids);
+        hd = tl = Mlist1(Mlist3(Msetb_symbol, Mcar(ids), Mcar(tids)));
+        for (ids = Mcdr(ids), it = Mcdr(tids); !Mnullp(ids); ids = Mcdr(ids), it = Mcdr(it)) {
+            Mcdr(tl) = Mlist1(Mlist3(Msetb_symbol, Mcar(ids), Mcar(it)));
+            tl = Mcdr(tl);
+        }
+
+        return Mcons(Mlet_values_symbol, Mcons(Mlist1(Mlist2(tids, e)), hd));
+    }
+}
+
+
+// (letrec-values ([(<id> ...) <expr>] ...)
+//   <body> ...)
+// =>
+// (let-values ([(<id> ...) (values #<unbound> ...)] ...)
+//   (let-values ([(<tid> ...) <expr>])
+//     (set! <id> <tid>)
+//     ... )
+//   <body> ...)
+static obj expand_letrec_values_expr(obj e) {
+    obj bindings, body, hd, tl;
+
+    bindings = Mcadr(e);
+    body = Mcddr(e);
+
+    // create initial bindings
+    e = Mlist2(Mlet_values_symbol, make_letrec_values_ids(bindings));
+
+    // create assignments
+    hd = tl = Mlist1(make_letrec_values_set(Mcar(bindings)));
+    for (bindings = Mcdr(bindings); !Mnullp(bindings); bindings = Mcdr(bindings)) {
+        Mcdr(tl) = Mlist1(make_letrec_values_set(Mcar(bindings)));
+        tl = Mcdr(tl);
+    }
+
+    Mcdr(tl) = body;
+    Mcddr(e) = hd;
+    return e;
+}
+
 // (let ([<id> <expr>]) ...) <body>)
 // => (let-values ([(<id>) <expr>]) ...) <body>)
 //
@@ -129,6 +237,23 @@ loop:
             } else {
                 // at least one binding
                 e = expand_letrec_expr(e);
+                goto loop;
+            }
+        } else if (hd == Mlet_values_symbol) {
+            if (Mnullp(Mcadr(e))) {
+                // empty bindings => just use body
+                return condense_body(Mcddr(e));
+            } else {
+                // at least one binding
+                return expand_let_values_expr(e);
+            }
+        } else if (hd == Mletrec_values_symbol) {
+            if (Mnullp(Mcadr(e))) {
+                // empty bindings => just use body
+                return condense_body(Mcddr(e));
+            } else {
+                // at least one binding
+                e = expand_letrec_values_expr(e);
                 goto loop;
             }
         } else if (hd == Mbegin_symbol) {

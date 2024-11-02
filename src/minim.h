@@ -468,6 +468,8 @@ obj intern(intern_table *tab, const char *s);
 
 #define Mintern(x)      intern(itab, x)
 
+obj Mgensym(const char *s);
+
 // System
 
 extern obj *Mcurr_tc_box;
