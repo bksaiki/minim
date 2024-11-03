@@ -279,8 +279,9 @@ typedef enum {
 #define Mcontinuation_setbp(o)          (Mcontinuation_type(o) == SETB_CONT_TYPE)
 #define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-#define Mcontinuation_callcc_size           Mcontinuation_size(0)
+#define Mcontinuation_callcc_size           Mcontinuation_size(1)
 #define Mcontinuation_callccp(o)            (Mcontinuation_type(o) == CALLCC_CONT_TYPE)
+#define Mcontinuation_callcc_winders(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
 
 #define Mcontinuation_callwv_size               Mcontinuation_size(2)
 #define Mcontinuation_callwvp(o)                (Mcontinuation_type(o) == CALLWV_CONT_TYPE)
@@ -308,7 +309,7 @@ obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
-obj Mcallcc_continuation(obj prev, obj env);
+obj Mcallcc_continuation(obj prev, obj env, obj winders);
 obj Mcallwv_continuation(obj prev, obj env, obj producer);
 obj Mdynwind_continuation(obj prev, obj env, obj val, obj post);
 obj Mwinders_continuation(obj prev, obj env, obj winders);
@@ -344,18 +345,20 @@ void port_write(int c, obj p);
 // +------------+
 // |    type    | [0, 1)
 // |    cc      | [8, 16)       // current continuation
-// |    env     | [16, 24)
-// |    vb      | [24, 32)      // values buffer
-// |    va      | [24, 32)      // values buffer allocation size
-// |    vc      | [32, 40)      // values buffer count
+// |   winders  | [16, 24)      // current winders
+// |    env     | [24, 32)      // current environment
+// |    vb      | [32, 40)      // values buffer
+// |    va      | [40, 48)      // values buffer allocation size
+// |    vc      | [48, 56)      // values buffer count
 // +------------+
-#define Mtc_size            (6 * ptr_size)
+#define Mtc_size            (7 * ptr_size)
 #define Mtcp(o)             (obj_type(o) == THREAD_OBJ_TYPE)
 #define Mtc_cc(o)           (*((obj*) ptr_add(o, ptr_size)))
-#define Mtc_env(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
-#define Mtc_vb(o)           (*((obj**) ptr_add(o, 3 * ptr_size)))
-#define Mtc_va(o)           (*((uptr*) ptr_add(o, 4 * ptr_size)))
-#define Mtc_vc(o)           (*((uptr*) ptr_add(o, 5 * ptr_size)))
+#define Mtc_wnd(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mtc_env(o)          (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mtc_vb(o)           (*((obj**) ptr_add(o, 4 * ptr_size)))
+#define Mtc_va(o)           (*((uptr*) ptr_add(o, 5 * ptr_size)))
+#define Mtc_vc(o)           (*((uptr*) ptr_add(o, 6 * ptr_size)))
 
 obj Mthread_context(void);
 
@@ -400,6 +403,7 @@ iptr list_length(obj x);
 obj Mlength(obj x);
 obj Mreverse(obj x);
 obj Mappend(obj x, obj y);
+obj list_tail(obj x, iptr i);
 
 // Continuations
 
@@ -413,10 +417,10 @@ void continuation_set_immutable(obj k);
 // Otherwise, the argument is returned.
 obj continuation_mutable(obj k);
 
-// Restores a continuation.
-// The result is a new continuation chain formed by merging
-// the common ancestors of the continuation and current continuation.
-obj continuation_restore(obj cc, obj k);
+// Restores a continuation. The continuation must have been captured
+// by `call/cc`. May add a continuation frame to handle any winders
+// installed by `dynamic-wind`.
+obj continuation_restore(obj tc, obj k);
 
 // For debugging
 void print_continuation(obj cc);

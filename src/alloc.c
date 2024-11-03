@@ -175,7 +175,7 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
     return x;
 }
 
-obj Mcallcc_continuation(obj prev, obj env) {
+obj Mcallcc_continuation(obj prev, obj env, obj winders) {
     obj x = GC_malloc(Mcontinuation_callcc_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLCC_CONT_TYPE;
@@ -183,6 +183,7 @@ obj Mcallcc_continuation(obj prev, obj env) {
     Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
+    Mcontinuation_callcc_winders(x) = winders;
     return x;
 }
 
@@ -230,6 +231,7 @@ obj Mthread_context(void) {
     obj x = GC_malloc(Mtc_size);
     obj_type(x) = THREAD_OBJ_TYPE;
     Mtc_cc(x) = Mnull;
+    Mtc_wnd(x) = Mnull;
     Mtc_env(x) = Mnull;
     Mtc_vb(x) = GC_malloc(INIT_VALUES_BUFFER_LEN * sizeof(obj));
     Mtc_va(x) = INIT_VALUES_BUFFER_LEN;

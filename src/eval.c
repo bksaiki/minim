@@ -344,7 +344,7 @@ loop:
         } else if (hd == Mcallcc_symbol) {
             // call/cc
             continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
-            Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc));
+            Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
             e = Mcadr(e);
             goto loop;
         } else if (hd == Mcallwv_symbol) {
@@ -403,7 +403,7 @@ do_app:
         Mtc_env(tc) = do_closure(f, args);
         goto loop;
     } else if (Mcontinuationp(f)) {
-        Mtc_cc(tc) = continuation_restore(Mtc_cc(tc), f);
+        Mtc_cc(tc) = continuation_restore(tc, f);
         x = do_values(args);
         goto do_k;
     } else {
@@ -466,6 +466,7 @@ do_k:
     case CALLCC_CONT_TYPE:
         if (Mcontinuation_capturedp(Mtc_cc(tc))) {
             // restoring captured continuation
+            Mtc_wnd(tc) = Mcontinuation_callcc_winders(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_k;
         } else {
@@ -525,6 +526,7 @@ do_k:
 
     // dynamic-wind expressions
     case DYNWIND_CONT_TYPE:
+        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         switch (Mcontinuation_dynwind_state(Mtc_cc(tc))) {
         // unevaluated dynamic-wind
         case DYNWIND_NEW:
@@ -561,8 +563,15 @@ do_k:
 
         // evaluated pre thunk
         case DYNWIND_PRE:
-            assert_single_value(Mtc_cc(tc), x);
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_VAL;
+            Mtc_wnd(tc) = Mcons(
+                Mcons(
+                    Mcontinuation_dynwind_pre(Mtc_cc(tc)),
+                    Mcontinuation_dynwind_post(Mtc_cc(tc))
+                ),
+                Mtc_wnd(tc)
+            );
+    
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             f = Mcontinuation_dynwind_val(Mtc_cc(tc));
             args = Mnull;
@@ -577,6 +586,7 @@ do_k:
                 Mcontinuation_dynwind_val(Mtc_cc(tc)) = Mlist1(x);
             }
             
+            Mtc_wnd(tc) = Mcdr(Mtc_wnd(tc));
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_POST;
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             f = Mcontinuation_dynwind_post(Mtc_cc(tc));

@@ -51,3 +51,8 @@ obj Mappend(obj x, obj y) {
         return hd;
     }
 }
+
+obj list_tail(obj x, iptr i) {
+    for (; i > 0; i--, x = Mcdr(x));
+    return x;
+}
