@@ -226,6 +226,7 @@ obj Mclosure(obj env, obj formals, obj body);
 // |    type    | [0, 1)
 // | cont_type  | [1, 2)
 // |  immutable | [2, 3)
+// |  captured  | [3, 4)
 // |    prev    | [8, 16)
 // |    env     | [16, 24)
 // |    ...     |
@@ -234,6 +235,7 @@ obj Mclosure(obj env, obj formals, obj body);
 #define Mcontinuationp(o)               (obj_type(o) == CONTINUATON_OBJ_TYPE)
 #define Mcontinuation_type(o)           (*((byte*) ptr_add(o, 1)))
 #define Mcontinuation_immutablep(o)     (*((byte*) ptr_add(o, 2)))
+#define Mcontinuation_capturedp(o)      (*((byte*) ptr_add(o, 3)))
 #define Mcontinuation_prev(o)           (*((obj*) ptr_add(o, ptr_size)))
 #define Mcontinuation_env(o)            (*((obj*) ptr_add(o, 2 * ptr_size)))
 

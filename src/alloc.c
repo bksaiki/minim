@@ -105,6 +105,7 @@ obj Mnull_continuation(obj env) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = NULL_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = Mnull;
     Mcontinuation_env(x) = env;
     return x;
@@ -115,6 +116,7 @@ obj Mapp_continuation(obj prev, obj env, obj args) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = APP_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_app_hd(x) = args;
@@ -127,6 +129,7 @@ obj Mcond_continuation(obj prev, obj env, obj ift, obj iff) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = COND_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_cond_ift(x) = ift;
@@ -139,6 +142,7 @@ obj Mseq_continuation(obj prev, obj env, obj seq) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SEQ_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_seq_value(x) = seq;
@@ -150,6 +154,7 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = LET_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_let_env(x) = env_extend(env);
@@ -163,6 +168,7 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = SETB_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_setb_name(x) = name;
@@ -174,6 +180,7 @@ obj Mcallcc_continuation(obj prev, obj env) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLCC_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     return x;
@@ -184,6 +191,7 @@ obj Mcallwv_continuation(obj prev, obj env, obj consumer) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLWV_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_callwv_producer(x) = Mfalse;
@@ -196,6 +204,7 @@ obj Mdynwind_continuation(obj prev, obj env, obj val, obj post) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = DYNWIND_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_dynwind_pre(x) = Mfalse;
@@ -210,6 +219,7 @@ obj Mwinders_continuation(obj prev, obj env, obj winders) {
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = WINDERS_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
+    Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_winders_value(x) = winders;

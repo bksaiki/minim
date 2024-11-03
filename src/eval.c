@@ -464,17 +464,28 @@ do_k:
     
     // call/cc expressions
     case CALLCC_CONT_TYPE:
-        assert_single_value(Mtc_cc(tc), x);
-        check_callcc(x);
+        if (Mcontinuation_capturedp(Mtc_cc(tc))) {
+            // restoring captured continuation
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
+            goto do_k;
+        } else {
+            // capturing current continuation
+            assert_single_value(Mtc_cc(tc), x);
+            check_callcc(x);
 
-        f = x;
-        args = Mlist1(Mcontinuation_prev(Mtc_cc(tc)));
-        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-        Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
-        goto do_app;
+            Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
+            Mcontinuation_capturedp(Mtc_cc(tc)) = 1;
+
+            f = x;
+            args = Mlist1(Mtc_cc(tc));
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
+            goto do_app;
+        }
     
     // call-with-values expressions
     case CALLWV_CONT_TYPE:
+        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         if (Mfalsep(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
             // evaluated producer syntax
             assert_single_value(Mtc_cc(tc), x);

@@ -144,6 +144,12 @@ static obj common_tail(obj k1, obj k2) {
 obj continuation_restore(obj cc, obj k) {
     obj tl, it, cc_winders, k_winders, winders;
     
+    // check that continuation was captured by call/cc
+    if (!Mcontinuation_capturedp(k)) {
+        minim_error1("continuation_restore()", "can only restored captured continuations", k);
+    }
+
+    
     tl = common_tail(cc, k);
     if (tl == k) {
         // edge case: `tl` is just `k` so nothing to do
