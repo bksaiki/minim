@@ -1,21 +1,8 @@
 // prims.c: tests for primitives
 
-#include "../src/minim.h"
+#include "test.h"
 
 int return_code, passed;
-
-#define log_test(name, t) {             \
-    if (t() == 1) {                     \
-        printf("[ \033[32mPASS\033[0m ] %s\n", name);  \
-    } else {                            \
-        return_code = 1;                \
-        printf("[ \033[31mFAIL\033[0m ] %s\n", name);  \
-    }                                   \
-}
-
-#define log_failed_case(s, expect, actual) {                        \
-    printf(" %s => expected: %s, actual: %s\n", s, expect, actual); \
-}
 
 char *write_debug(obj o) {
     FILE *stream;
@@ -68,6 +55,36 @@ int test_callwv(void) {
     return passed;
 }
 
+
+int test_list(void) {
+    passed = 1;
+
+    check_equal("(list)", "()");
+    check_equal("(list 1)", "(1)");
+    check_equal("(list 1 2)", "(1 2)");
+    check_equal("(list 1 2 3)", "(1 2 3)");
+
+    check_equal("(length '())", "0");
+    check_equal("(length '(1))", "1");
+    check_equal("(length '(1 2))", "2");
+    check_equal("(length '(1 2 3))", "3");
+
+    check_equal("(reverse '())", "()");
+    check_equal("(reverse '(1))", "(1)");
+    check_equal("(reverse '(1 2))", "(2 1)");
+    check_equal("(reverse '(1 2 3))", "(3 2 1)");
+
+    check_equal("(append '() '())", "()");
+    check_equal("(append '(1) '())", "(1)");
+    check_equal("(append '(1 2 3) '())", "(1 2 3)");
+    check_equal("(append '() '(1))", "(1)");
+    check_equal("(append '() '(1 2 3))", "(1 2 3)");
+    check_equal("(append '(a b c) '(d))", "(a b c d)");
+    check_equal("(append '(a b c) '(d e f))", "(a b c d e f)");
+
+
+    return passed;
+}
 
 int test_callcc(void) {
     passed = 1;
@@ -125,7 +142,7 @@ int test_dynamic_wind(void) {
            "(if (fx2< (length path) 4) "
                "(c 'talk2) "
                "(reverse path))))",
-        "(disconnect talk2 connect disconnect talk1 connect)"
+        "(connect talk1 disconnect connect talk2 disconnect)"
     );
 
     return passed;
@@ -138,9 +155,10 @@ int main(int argc, char **argv) {
 
     return_code = 0;
 
-    log_test("call-with-values", test_callwv);
-    log_test("call/cc", test_callcc);
-    log_test("dynamic-wind", test_dynamic_wind);
+    log_test("list", test_list, return_code);
+    log_test("call-with-values", test_callwv, return_code);
+    log_test("call/cc", test_callcc, return_code);
+    log_test("dynamic-wind", test_dynamic_wind, return_code);
 
     minim_shutdown(return_code);
 }

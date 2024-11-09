@@ -1,21 +1,8 @@
 // syntax.c: tests for evaluation
 
-#include "../src/minim.h"
+#include "test.h"
 
 int return_code, passed;
-
-#define log_test(name, t) {             \
-    if (t() == 1) {                     \
-        printf("[ \033[32mPASS\033[0m ] %s\n", name);  \
-    } else {                            \
-        return_code = 1;                \
-        printf("[ \033[31mFAIL\033[0m ] %s\n", name);  \
-    }                                   \
-}
-
-#define log_failed_case(s, expect, actual) {                        \
-    printf(" %s => expected: %s, actual: %s\n", s, expect, actual); \
-}
 
 char *write_debug(obj o) {
     FILE *stream;
@@ -200,16 +187,16 @@ int main(int argc, char **argv) {
 
     return_code = 0;
 
-    log_test("quote", test_quote);
-    log_test("if", test_if);
-    log_test("begin", test_begin);
-    log_test("let-values", test_let_values);
-    log_test("letrec-values", test_letrec_values);
-    log_test("let", test_let);
-    log_test("letrec", test_letrec);
-    log_test("let (loop)", test_let_loop);
-    log_test("lambda", test_lambda);
-    log_test("set!", test_setb);
+    log_test("quote", test_quote, return_code);
+    log_test("if", test_if, return_code);
+    log_test("begin", test_begin, return_code);
+    log_test("let-values", test_let_values, return_code);
+    log_test("letrec-values", test_letrec_values, return_code);
+    log_test("let", test_let, return_code);
+    log_test("letrec", test_letrec, return_code);
+    log_test("let (loop)", test_let_loop, return_code);
+    log_test("lambda", test_lambda, return_code);
+    log_test("set!", test_setb, return_code);
 
     minim_shutdown(return_code);
 }

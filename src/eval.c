@@ -114,11 +114,7 @@ static obj do_prim(obj f, obj args) {
         return fn(Mcar(args), Mcadr(args));
     
     default:
-        if (Mprim_arity(f) < 0) {
-            minim_error1("eval_expr", "primitive operations should have fixed arity", f);
-        } else {
-            minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
-        }
+        minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
     }
 }
 
@@ -336,11 +332,6 @@ loop:
             // quote
             x = Mcadr(e);
             goto do_k;
-        // } else if (hd == Mcallwv_symbol) {
-        //     // call-with-values
-        //     Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
-        //     e = Mcadr(e);
-        //     goto loop;
         } else {
             // application
             Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), e);
@@ -375,7 +366,9 @@ loop:
 
 do_app:
     if (Mprimp(f)) {
-        if (f == values_prim) {
+        if (f == list_prim) {
+            x = args;
+        } else if (f == values_prim) {
             x = do_values(args);
         } else if (f == dynwind_prim) {
             Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));

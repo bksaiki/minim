@@ -1,21 +1,8 @@
 // read.c: tests for C implementation of a Scheme reader
 
-#include "../src/minim.h"
+#include "test.h"
 
 int return_code, passed;
-
-#define log_test(name, t) {             \
-    if (t() == 1) {                     \
-        printf("[ \033[32mPASS\033[0m ] %s\n", name);  \
-    } else {                            \
-        return_code = 1;                \
-        printf("[ \033[31mFAIL\033[0m ] %s\n", name);  \
-    }                                   \
-}
-
-#define log_failed_case(s, expect, actual) {                        \
-    printf(" %s => expected: %s, actual: %s\n", s, expect, actual); \
-}
 
 char *write_debug(obj o) {
     FILE *stream;
@@ -116,8 +103,8 @@ int main(int argc, char **argv) {
     minim_init();
 
     return_code = 0;
-    log_test("simple", test_read_simple);
-    log_test("pair", test_read_pair);
+    log_test("simple", test_read_simple, return_code);
+    log_test("pair", test_read_pair, return_code);
 
     minim_shutdown(0);
     GC_deinit();

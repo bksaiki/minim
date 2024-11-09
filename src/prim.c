@@ -6,6 +6,7 @@ obj nullp_prim;
 obj cons_prim;
 obj car_prim;
 obj cdr_prim;
+obj list_prim;
 obj length_prim;
 obj reverse_prim;
 obj append_prim;
@@ -49,6 +50,10 @@ static obj dynwind_proc() {
     minim_error("dynwind_proc()", "should never call");
 }
 
+static obj list_proc() {
+    minim_error("list_proc()", "should never call");
+}
+
 static obj values_proc() {
     minim_error("values_proc()", "should never call");
 }
@@ -80,6 +85,7 @@ void init_prims(void) {
     callcc_prim = Mprim(callcc_proc, 1, "call-with-current-continuation");
     callwv_prim = Mprim(callwv_proc, 2, "call-with-values");
     dynwind_prim = Mprim(dynwind_proc, 3, "dynamic-wind");
+    list_prim = Mprim(list_proc, -1, "list");
     values_prim = Mprim(values_proc, -1, "values");
 }
 
@@ -114,6 +120,7 @@ obj prim_env(obj env) {
     env_add_prim(env, callcc_prim);
     env_add_prim(env, callwv_prim);
     env_add_prim(env, dynwind_prim);
+    env_add_prim(env, list_prim);
     env_add_prim(env, values_prim);
 
     return env;

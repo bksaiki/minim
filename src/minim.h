@@ -459,6 +459,7 @@ extern obj nullp_prim;
 extern obj cons_prim;
 extern obj car_prim;
 extern obj cdr_prim;
+extern obj list_prim;
 extern obj length_prim;
 extern obj reverse_prim;
 extern obj append_prim;

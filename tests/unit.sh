@@ -2,7 +2,9 @@
 
 RED="\e[31m"
 GREEN="\e[32m"
-ENDCOLOR="\e[0m"
+WHITE='\e[37m'
+BOLD="\e[1m"
+RESET="\e[0m"
 
 # determine physical directory of this script
 src="${BASH_SOURCE[0]}"
@@ -27,11 +29,14 @@ echo "Running unit tests"
 
 for file in $TESTS; do
   test="$(realpath $TOPDIR/$file)"
-  echo "Running $test"
+  echo -e "Running ${BOLD}$test${RESET}"
 
   $test
   if [ $? -ne 0 ]; then
+    echo -e "${BOLD}[ ${RED}FAIL${WHITE} ]${RESET} $test"
     ((failed++))
+  else
+    echo -e "${BOLD}[ ${GREEN}PASS${WHITE} ]${RESET} $test"
   fi
 
   ((total++))

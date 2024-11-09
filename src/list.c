@@ -18,19 +18,13 @@ obj Mlength(obj x) {
 }
 
 obj Mreverse(obj x) {
-    obj hd, tl;
-
-    if (Mnullp(x)) {
-        return Mnull;
-    } else {
-        hd = tl = Mlist1(Mcar(x));
-        for (x = Mcdr(x); !Mnullp(x); x = Mcdr(x)) {
-            Mcdr(tl) = Mlist1(Mcar(x));
-            tl = Mcdr(tl);
-        }
-
-        return hd;
+    obj hd = Mnull;
+    while (!Mnullp(x)) {
+        hd = Mcons(Mcar(x), hd);
+        x = Mcdr(x);
     }
+
+    return hd;
 }
 
 obj Mappend(obj x, obj y) {
