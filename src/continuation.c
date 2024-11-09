@@ -86,6 +86,7 @@ obj continuation_mutable(obj k) {
             k2 = Mdynwind_continuation(
                 Mcontinuation_prev(k),
                 Mcontinuation_env(k),
+                Mcontinuation_dynwind_pre(k),
                 Mcontinuation_dynwind_val(k),
                 Mcontinuation_dynwind_post(k)    
             );

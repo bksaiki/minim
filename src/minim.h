@@ -56,7 +56,6 @@ typedef void            *obj;
 extern obj Mbegin_symbol;
 extern obj Mcallcc_symbol;
 extern obj Mcallwv_symbol;
-extern obj Mdynwind_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
@@ -312,7 +311,7 @@ obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
 obj Mcallcc_continuation(obj prev, obj env, obj winders);
 obj Mcallwv_continuation(obj prev, obj env, obj producer);
-obj Mdynwind_continuation(obj prev, obj env, obj val, obj post);
+obj Mdynwind_continuation(obj prev, obj env, obj pre, obj val, obj post);
 obj Mwinders_continuation(obj prev, obj env, obj winders);
 
 // Port 
@@ -462,6 +461,9 @@ extern obj nullp_prim;
 extern obj cons_prim;
 extern obj car_prim;
 extern obj cdr_prim;
+extern obj length_prim;
+extern obj reverse_prim;
+extern obj append_prim;
 
 extern obj fx_neg_prim;
 extern obj fx_inc_prim;
@@ -477,6 +479,7 @@ extern obj fx_gt_prim;
 extern obj fx_lt_prim;
 
 extern obj values_prim;
+extern obj dynwind_prim;
 
 // Errors
 

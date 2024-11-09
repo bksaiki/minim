@@ -200,7 +200,7 @@ obj Mcallwv_continuation(obj prev, obj env, obj consumer) {
     return x;
 }
 
-obj Mdynwind_continuation(obj prev, obj env, obj val, obj post) {
+obj Mdynwind_continuation(obj prev, obj env, obj pre, obj val, obj post) {
     obj x = GC_malloc(Mcontinuation_dynwind_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = DYNWIND_CONT_TYPE;
@@ -208,7 +208,7 @@ obj Mdynwind_continuation(obj prev, obj env, obj val, obj post) {
     Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
-    Mcontinuation_dynwind_pre(x) = Mfalse;
+    Mcontinuation_dynwind_pre(x) = pre;
     Mcontinuation_dynwind_val(x) = val;
     Mcontinuation_dynwind_post(x) = post;
     Mcontinuation_dynwind_state(x) = DYNWIND_NEW;

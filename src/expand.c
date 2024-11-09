@@ -292,13 +292,6 @@ loop:
             return Mlist2(Mcallcc_symbol, expand_expr(Mcadr(e)));
         } else if (hd == Mcallwv_symbol) {
             return Mlist3(Mcallwv_symbol, expand_expr(Mcadr(e)), expand_expr(Mcaddr(e)));
-        } else if (hd == Mdynwind_symbol) {
-            return Mlist4(
-                Mdynwind_symbol,
-                expand_expr(Mcadr(e)),
-                expand_expr(Mcaddr(e)),
-                expand_expr(Mcar(Mcdddr(e)))
-            );
         } else {
             hd = tl = Mcons(expand_expr(Mcar(e)), Mnull);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it)) {

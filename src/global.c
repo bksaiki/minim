@@ -13,7 +13,6 @@ obj Munbound;
 obj Mbegin_symbol;
 obj Mcallcc_symbol;
 obj Mcallwv_symbol;
-obj Mdynwind_symbol;
 obj Mif_symbol;
 obj Mlambda_symbol;
 obj Mlet_symbol;
@@ -51,7 +50,6 @@ void minim_init(void) {
     Mbegin_symbol = Mintern("begin");
     Mcallcc_symbol = Mintern("call/cc");
     Mcallwv_symbol = Mintern("call-with-values");
-    Mdynwind_symbol = Mintern("dynamic-wind");
     Mif_symbol = Mintern("if");
     Mlambda_symbol = Mintern("lambda");
     Mlet_symbol = Mintern("let");

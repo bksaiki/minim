@@ -109,11 +109,6 @@ static obj do_prim(obj f, obj args) {
         return fn(Mcar(args), Mcadr(args));
 
     case 3:
-        if (Mnullp(args) || Mnullp(Mcdr(args)) || !Mnullp(Mcddr(args)))
-            raise_arity_exn(f, args);
-        return fn(Mcar(args), Mcadr(args));
-
-    case 4:
         if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)) || !Mnullp(Mcdddr(args)))
             raise_arity_exn(f, args);
         return fn(Mcar(args), Mcadr(args));
@@ -352,11 +347,6 @@ loop:
             Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
             e = Mcadr(e);
             goto loop;
-        } else if (hd == Mdynwind_symbol) {
-            // dynamic-wind
-            Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e), Mcar(Mcdddr(e)));
-            e = Mcadr(e);
-            goto loop;
         } else {
             // application
             Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), e);
@@ -393,6 +383,9 @@ do_app:
     if (Mprimp(f)) {
         if (f == values_prim) {
             x = do_values(args);
+        } else if (f == dynwind_prim) {
+            Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
+            x = Mvoid;
         } else {
             x = do_prim(f, args);
         }
@@ -526,44 +519,20 @@ do_k:
 
     // dynamic-wind expressions
     case DYNWIND_CONT_TYPE:
-        Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         switch (Mcontinuation_dynwind_state(Mtc_cc(tc))) {
-        // unevaluated dynamic-wind
+        // first time
         case DYNWIND_NEW:
-            if (!Mprocp(Mcontinuation_dynwind_pre(Mtc_cc(tc)))) {
-                // evaluating pre thunk expression
-                assert_single_value(Mtc_cc(tc), x);
-                assert_thunk("dynamic-wind", x);
-                Mcontinuation_dynwind_pre(Mtc_cc(tc)) = x;
-
-                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-                e = Mcontinuation_dynwind_val(Mtc_cc(tc));
-                goto loop;
-            } else if (!Mprocp(Mcontinuation_dynwind_val(Mtc_cc(tc)))) {
-                // evaluating value thunk expression
-                assert_single_value(Mtc_cc(tc), x);
-                assert_thunk("dynamic-wind", x);
-                Mcontinuation_dynwind_val(Mtc_cc(tc)) = x;
-
-                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-                e = Mcontinuation_dynwind_post(Mtc_cc(tc));
-                goto loop;
-            } else {
-                // evaluating post thunk expression
-                assert_single_value(Mtc_cc(tc), x);
-                assert_thunk("dynamic-wind", x);
-                Mcontinuation_dynwind_post(Mtc_cc(tc)) = x;
-                Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_PRE;
-
-                Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-                f = Mcontinuation_dynwind_pre(Mtc_cc(tc));
-                args = Mnull;
-                goto do_app;
-            }
+            Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
+            Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_PRE;
+            
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            f = Mcontinuation_dynwind_pre(Mtc_cc(tc));
+            args = Mnull;
+            goto do_app;
 
         // evaluated pre thunk
         case DYNWIND_PRE:
-            clear_values_buffer(tc);
+            Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_VAL;
             Mtc_wnd(tc) = Mcons(
                 Mcons(
@@ -580,6 +549,7 @@ do_k:
 
         // evaluated val thunk
         case DYNWIND_VAL:
+            Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
             if (Mvaluesp(x)) {
                 Mcontinuation_dynwind_val(Mtc_cc(tc)) = values_to_list();
                 clear_values_buffer(tc);

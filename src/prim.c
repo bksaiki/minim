@@ -24,12 +24,12 @@ obj fx_gt_prim;
 obj fx_lt_prim;
 
 obj values_prim;
+obj dynwind_prim;
 
 // Wrapped procedures
 
 #define proc0(name, e) static obj name(void) { return (e); }
 #define proc1(name, x, e) static obj name(obj x) { return (e); }
-
 
 proc1(nullp_proc, x, Mbool(Mnullp(x)))
 proc1(car_proc, x, Mcar(x))
@@ -37,6 +37,10 @@ proc1(cdr_proc, x, Mcdr(x))
 
 static obj values_proc() {
     minim_error("values_proc()", "should never call");
+}
+
+static obj dynwind_proc() {
+    minim_error("dynwind_proc()", "should never call");
 }
 
 // Public API
@@ -64,6 +68,7 @@ void init_prims(void) {
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
 
     values_prim = Mprim(values_proc, -1, "values");
+    dynwind_prim = Mprim(dynwind_proc, 3, "dynamic-wind");
 }
 
 #define env_add_prim(e, p)  \
@@ -94,6 +99,7 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_lt_prim);
 
     env_add_prim(env, values_prim);
+    env_add_prim(env, dynwind_prim);
 
     return env;
 }

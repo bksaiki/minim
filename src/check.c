@@ -250,8 +250,6 @@ void check_expr(obj e) {
             check_2ary_syntax(e);
             check_expr(Mcadr(e));
             check_expr(Mcaddr(e));
-        } else if (hd == Mdynwind_symbol) {
-            check_3ary_syntax(e);
         } else if (Mlistp(e)) {
             for (it = e; !Mnullp(it); it = Mcdr(it))
                 check_expr(Mcar(it));
