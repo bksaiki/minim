@@ -336,12 +336,6 @@ loop:
             // quote
             x = Mcadr(e);
             goto do_k;
-        } else if (hd == Mcallcc_symbol) {
-            // call/cc
-            continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
-            Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
-            e = Mcadr(e);
-            goto loop;
         } else if (hd == Mcallwv_symbol) {
             // call-with-values
             Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
@@ -386,6 +380,10 @@ do_app:
         } else if (f == dynwind_prim) {
             Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
             x = Mvoid;
+        } else if (f == callcc_prim) {
+            continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
+            Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
+            x = Mcar(args);
         } else {
             x = do_prim(f, args);
         }

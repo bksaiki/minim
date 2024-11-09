@@ -23,8 +23,9 @@ obj fx_le_prim;
 obj fx_gt_prim;
 obj fx_lt_prim;
 
-obj values_prim;
+obj callcc_prim;
 obj dynwind_prim;
+obj values_prim;
 
 // Wrapped procedures
 
@@ -35,12 +36,16 @@ proc1(nullp_proc, x, Mbool(Mnullp(x)))
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
-static obj values_proc() {
-    minim_error("values_proc()", "should never call");
+static obj callcc_proc() {
+    minim_error("callcc_proc()", "should never call");
 }
 
 static obj dynwind_proc() {
     minim_error("dynwind_proc()", "should never call");
+}
+
+static obj values_proc() {
+    minim_error("values_proc()", "should never call");
 }
 
 // Public API
@@ -67,8 +72,9 @@ void init_prims(void) {
     fx_gt_prim = Mprim(Mfx_gt, 2, "fx2>");
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
 
-    values_prim = Mprim(values_proc, -1, "values");
+    callcc_prim = Mprim(callcc_proc, 1, "call-with-current-continuation");
     dynwind_prim = Mprim(dynwind_proc, 3, "dynamic-wind");
+    values_prim = Mprim(values_proc, -1, "values");
 }
 
 #define env_add_prim(e, p)  \
@@ -98,8 +104,10 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
 
-    env_add_prim(env, values_prim);
+    env_insert(env, Mintern("call/cc"), callcc_prim);
+    env_add_prim(env, callcc_prim);
     env_add_prim(env, dynwind_prim);
+    env_add_prim(env, values_prim);
 
     return env;
 }

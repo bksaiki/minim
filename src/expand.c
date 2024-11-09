@@ -288,8 +288,6 @@ loop:
             return Mlist3(Msetb_symbol, Mcadr(e), expand_expr(Mcaddr(e)));
         } else if (hd == Mquote_symbol) {
             return e;
-        } else if (hd == Mcallcc_symbol) {
-            return Mlist2(Mcallcc_symbol, expand_expr(Mcadr(e)));
         } else if (hd == Mcallwv_symbol) {
             return Mlist3(Mcallwv_symbol, expand_expr(Mcadr(e)), expand_expr(Mcaddr(e)));
         } else {

@@ -105,19 +105,6 @@ obj continuation_mutable(obj k) {
     }
 }
 
-// Length of a continuation chain.
-// static uptr continuation_length(obj k) {
-//     uptr l = 0;
-//     for (; Mcontinuationp(k); k = Mcontinuation_prev(k), ++l);
-//     return l;
-// }
-
-// // Extracts the tail of a continuation chain.
-// static obj continuation_tail(obj k, iptr l) {
-//     for (uptr i = 0; i < l; ++i, k = Mcontinuation_prev(k));
-//     return k;
-// }
-
 // Extracts the common tail of two winder lists
 static obj common_tail(obj xs, obj ys) {
     iptr l1, l2;

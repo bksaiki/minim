@@ -243,9 +243,6 @@ void check_expr(obj e) {
             check_setb(e);
         } else if (hd == Mquote_symbol) {
             check_1ary_syntax(e);
-        } else if (hd == Mcallcc_symbol) {
-            check_1ary_syntax(e);
-            check_expr(Mcadr(e));
         } else if (hd == Mcallwv_symbol) {
             check_2ary_syntax(e);
             check_expr(Mcadr(e));

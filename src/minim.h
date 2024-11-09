@@ -54,7 +54,6 @@ typedef void            *obj;
 // Syntax
 
 extern obj Mbegin_symbol;
-extern obj Mcallcc_symbol;
 extern obj Mcallwv_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
@@ -478,8 +477,9 @@ extern obj fx_le_prim;
 extern obj fx_gt_prim;
 extern obj fx_lt_prim;
 
-extern obj values_prim;
+extern obj callcc_prim;
 extern obj dynwind_prim;
+extern obj values_prim;
 
 // Errors
 
