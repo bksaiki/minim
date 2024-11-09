@@ -24,6 +24,7 @@ obj fx_gt_prim;
 obj fx_lt_prim;
 
 obj callcc_prim;
+obj callwv_prim;
 obj dynwind_prim;
 obj values_prim;
 
@@ -38,6 +39,10 @@ proc1(cdr_proc, x, Mcdr(x))
 
 static obj callcc_proc() {
     minim_error("callcc_proc()", "should never call");
+}
+
+static obj callwv_proc() {
+    minim_error("callwv_proc()", "should never call");
 }
 
 static obj dynwind_proc() {
@@ -73,6 +78,7 @@ void init_prims(void) {
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
 
     callcc_prim = Mprim(callcc_proc, 1, "call-with-current-continuation");
+    callwv_prim = Mprim(callwv_proc, 2, "call-with-values");
     dynwind_prim = Mprim(dynwind_proc, 3, "dynamic-wind");
     values_prim = Mprim(values_proc, -1, "values");
 }
@@ -106,6 +112,7 @@ obj prim_env(obj env) {
 
     env_insert(env, Mintern("call/cc"), callcc_prim);
     env_add_prim(env, callcc_prim);
+    env_add_prim(env, callwv_prim);
     env_add_prim(env, dynwind_prim);
     env_add_prim(env, values_prim);
 

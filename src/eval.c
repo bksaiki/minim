@@ -336,11 +336,11 @@ loop:
             // quote
             x = Mcadr(e);
             goto do_k;
-        } else if (hd == Mcallwv_symbol) {
-            // call-with-values
-            Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
-            e = Mcadr(e);
-            goto loop;
+        // } else if (hd == Mcallwv_symbol) {
+        //     // call-with-values
+        //     Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcaddr(e));
+        //     e = Mcadr(e);
+        //     goto loop;
         } else {
             // application
             Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), e);
@@ -381,9 +381,14 @@ do_app:
             Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
             x = Mvoid;
         } else if (f == callcc_prim) {
+            check_callcc(Mcar(args));
             continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
             Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
             x = Mcar(args);
+        } else if (f == callwv_prim) {
+            assert_thunk("call-with-values", Mcar(args));
+            Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args));
+            x = Mvoid;
         } else {
             x = do_prim(f, args);
         }
@@ -462,9 +467,6 @@ do_k:
             goto do_k;
         } else {
             // capturing current continuation
-            assert_single_value(Mtc_cc(tc), x);
-            check_callcc(x);
-
             Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
             Mcontinuation_capturedp(Mtc_cc(tc)) = 1;
 
@@ -478,27 +480,13 @@ do_k:
     // call-with-values expressions
     case CALLWV_CONT_TYPE:
         Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
-        if (Mfalsep(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
-            // evaluated producer syntax
-            assert_single_value(Mtc_cc(tc), x);
-            assert_thunk("call-with-values", x);
-
-            Mcontinuation_callwv_producer(Mtc_cc(tc)) = x;
-            e = Mcontinuation_callwv_consumer(Mtc_cc(tc));
-            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            goto loop;
-        } else if (!Mprocp(Mcontinuation_callwv_consumer(Mtc_cc(tc)))) {
-            // evaluated consumer syntax
-            assert_single_value(Mtc_cc(tc), x);
-            if (!Mprocp(x)) {
-                minim_error1("call-with-values", "expected a procedure", x);
-            }
-
-            Mcontinuation_callwv_consumer(Mtc_cc(tc)) = x;
+        if (Mprocp(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
+            // first time => evaluate producer
             f = Mcontinuation_callwv_producer(Mtc_cc(tc));
             args = Mnull;
     
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mcontinuation_callwv_producer(Mtc_cc(tc)) = Mfalse;
             goto do_app;
         } else {
             // evaluated producer procedure

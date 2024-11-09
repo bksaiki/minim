@@ -54,7 +54,6 @@ typedef void            *obj;
 // Syntax
 
 extern obj Mbegin_symbol;
-extern obj Mcallwv_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
@@ -309,7 +308,7 @@ obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
 obj Mcallcc_continuation(obj prev, obj env, obj winders);
-obj Mcallwv_continuation(obj prev, obj env, obj producer);
+obj Mcallwv_continuation(obj prev, obj env, obj producer, obj consumer);
 obj Mdynwind_continuation(obj prev, obj env, obj pre, obj val, obj post);
 obj Mwinders_continuation(obj prev, obj env, obj winders);
 
@@ -478,6 +477,7 @@ extern obj fx_gt_prim;
 extern obj fx_lt_prim;
 
 extern obj callcc_prim;
+extern obj callwv_prim;
 extern obj dynwind_prim;
 extern obj values_prim;
 

@@ -187,7 +187,7 @@ obj Mcallcc_continuation(obj prev, obj env, obj winders) {
     return x;
 }
 
-obj Mcallwv_continuation(obj prev, obj env, obj consumer) {
+obj Mcallwv_continuation(obj prev, obj env, obj producer, obj consumer) {
     obj x = GC_malloc(Mcontinuation_callwv_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLWV_CONT_TYPE;
@@ -195,7 +195,7 @@ obj Mcallwv_continuation(obj prev, obj env, obj consumer) {
     Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
-    Mcontinuation_callwv_producer(x) = Mfalse;
+    Mcontinuation_callwv_producer(x) = producer;
     Mcontinuation_callwv_consumer(x) = consumer;
     return x;
 }
