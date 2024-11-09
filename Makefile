@@ -16,6 +16,9 @@ SRCS = $(shell find $(SRC_DIR) -name "*.c" ! -wholename $(ENTRY))
 OBJS = $(SRCS:%.c=$(BUILD_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
 
+TESTS = $(shell find $(TEST_DIR) -name "*.c" -printf "%f\n")
+TEST_OBJS = $(TESTS:%.c=$(BUILD_DIR)/%)
+
 MKDIR_P	= mkdir -p
 RM = rm -rf
 
@@ -24,7 +27,7 @@ RM = rm -rf
 
 all: $(EXENAME)
 
-gc: build/libgc.a
+base: $(BUILD_DIR) $(CONFIG) gc
 
 clean:
 	$(RM) $(BUILD_DIR)
@@ -32,11 +35,12 @@ clean:
 clean-all: clean
 	$(MAKE) -C $(GC_DIR) clean
 
-test: $(BUILD_DIR)/read $(BUILD_DIR)/syntax
-	$(BUILD_DIR)/read
-	$(BUILD_DIR)/syntax
+gc: $(BUILD_DIR)/libgc.a
 
-$(EXENAME): $(BUILD_DIR) gc $(CONFIG) $(OBJS)
+test: base $(OBJS) $(TEST_OBJS)
+	$(TEST_DIR)/unit.sh $(TEST_OBJS)
+	
+$(EXENAME): base $(OBJS)
 	$(CC) $(CFLAGS) $(INCFLAGS) $(OBJS) $(ENTRY) $(LDFLAGS) -o $(EXENAME)
 
 $(GC_DIR)/Makefile:
@@ -65,4 +69,4 @@ $(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c | $$(@D)/.
 $(BUILD_DIR)/%: $(TEST_DIR)/%.c $(OBJS)
 	$(CC) $(CFLAGS) $(INCFLAGS) $(DEPFLAGS) -o $@ $(OBJS) $< $(LDFLAGS)
 
-.PHONY: all clean gc
+.PHONY: all base clean clean-all gc test

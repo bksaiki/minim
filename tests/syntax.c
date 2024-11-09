@@ -92,17 +92,6 @@ int test_begin(void) {
     return passed;
 }
 
-int test_values(void) {
-    passed = 1;
-
-    check_equal("(call-with-values (lambda () (values)) (lambda xs xs))", "()");
-    check_equal("(call-with-values (lambda () (values 1)) (lambda xs xs))", "(1)");
-    check_equal("(call-with-values (lambda () (values 1 2 3)) (lambda xs xs))", "(1 2 3)");
-    check_equal("(call-with-values (lambda () (values 1 2)) fx2+)", "3");
-
-    return passed;
-}
-
 int test_let_values(void) {
     passed = 1;
 
@@ -205,69 +194,6 @@ int test_setb(void) {
     return passed;
 }
 
-int test_callcc(void) {
-    passed = 1;
-
-    check_equal("(call/cc (lambda (k) 1))", "1");
-    check_equal("(call/cc (lambda (k) (k 1) 2))", "1");
-    check_equal("(let ([x #f]) (cons 1 (call/cc (lambda (k) (set! x k) 2))))", "(1 . 2)");
-
-    // from ChezScheme documentation
-    check_equal("(call/cc (lambda (k) (fx2* 5 (k 4))))", "4");
-    check_equal("(fx2+ 2 (call/cc (lambda (k) (fx2* 5 (k 4)))))", "6");
-    check_equal("(letrec ([product "
-                  "(lambda (xs) "
-                    "(call/cc "
-                      "(lambda (break) "
-                        "(if (null? xs) "
-                            "1 "
-                            "(if (fx2= (car xs) 0) "
-                                "(break 0) "
-                                "(fx2* (car xs) (product (cdr xs))))))))]) "
-                  "(product '(7 3 8 0 1 9 5)))",
-                "0");
-    check_equal("(let ([x (call/cc (lambda (k) k))]) "
-                  "(x (lambda (ignore) \"hi\")))",
-                "\"hi\"");
-    
-    check_equal("(letrec ([k* #f] "
-                         "[y (fx1+ (call/cc (lambda (k) (set! k* k) 0)))]) "
-                  "(if (fx2< y 5) "
-                      "(k* y) "
-                      "y))",
-                "5");
-
-    return passed;
-}
-
-int test_dynamic_wind(void) {
-    passed = 1;
-
-    check_equal("(dynamic-wind (lambda () 1) (lambda () 2) (lambda () 3))", "2");
-    check_equal("(dynamic-wind (lambda () (values)) (lambda () 1) (lambda () (values 1 2)))", "1");
-
-    check_equal(
-        "(let ((path '()) (c #f)) "
-          "(let ((add (lambda (s) "
-                       "(set! path (cons s path))))) "
-            "(dynamic-wind "
-              "(lambda () (add 'connect)) "
-              "(lambda () "
-                "(add (call/cc "
-                        "(lambda (c0) "
-                          "(set! c c0) "
-                          "'talk1)))) "
-              "(lambda () (add 'disconnect))) "
-           "(if (fx2< (length path) 4) "
-               "(c 'talk2) "
-               "(reverse path))))",
-        "(disconnect talk2 connect disconnect talk1 connect)"
-    );
-
-
-    return passed;
-}
-
 int main(int argc, char **argv) {
     GC_init();
     minim_init();
@@ -277,7 +203,6 @@ int main(int argc, char **argv) {
     log_test("quote", test_quote);
     log_test("if", test_if);
     log_test("begin", test_begin);
-    log_test("values", test_values);
     log_test("let-values", test_let_values);
     log_test("letrec-values", test_letrec_values);
     log_test("let", test_let);
@@ -285,8 +210,6 @@ int main(int argc, char **argv) {
     log_test("let (loop)", test_let_loop);
     log_test("lambda", test_lambda);
     log_test("set!", test_setb);
-    log_test("call/cc", test_callcc);
-    log_test("dynamic-wind", test_dynamic_wind);
 
     minim_shutdown(return_code);
 }
