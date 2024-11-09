@@ -479,6 +479,7 @@ extern obj fx_le_prim;
 extern obj fx_gt_prim;
 extern obj fx_lt_prim;
 
+extern obj apply_prim;
 extern obj callcc_prim;
 extern obj callwv_prim;
 extern obj exit_prim;

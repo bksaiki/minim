@@ -24,6 +24,7 @@ obj fx_le_prim;
 obj fx_gt_prim;
 obj fx_lt_prim;
 
+obj apply_prim;
 obj callcc_prim;
 obj callwv_prim;
 obj exit_prim;
@@ -44,6 +45,7 @@ proc1(nullp_proc, x, Mbool(Mnullp(x)))
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
+uncallable_proc(apply_proc);
 uncallable_proc(callcc_proc);
 uncallable_proc(callwv_proc);
 uncallable_proc(dynwind_proc);
@@ -78,6 +80,8 @@ void init_prims(void) {
 
     void_prim = Mprim(void_proc, -1, "void");
 
+    apply_prim = Mprim(apply_proc, -3, "apply");
+    Mprim_specialp(apply_prim) = 1;
     callcc_prim = Mprim(callcc_proc, 1, "call-with-current-continuation");
     Mprim_specialp(callcc_prim) = 1;
     callwv_prim = Mprim(callwv_proc, 2, "call-with-values");
@@ -121,6 +125,7 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
 
+    env_add_prim(env, apply_prim);
     env_insert(env, Mintern("call/cc"), callcc_prim);
     env_add_prim(env, callcc_prim);
     env_add_prim(env, callwv_prim);

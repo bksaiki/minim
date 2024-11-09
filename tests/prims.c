@@ -148,6 +148,26 @@ int test_dynamic_wind(void) {
     return passed;
 }
 
+int test_apply(void) {
+    passed = 1;
+
+    check_equal("(apply list '())", "()");
+    check_equal("(apply list 1 '())", "(1)");
+    check_equal("(apply list 1 '(2 3))", "(1 2 3)");
+    check_equal("(apply list 1 2 3 '())", "(1 2 3)");
+    check_equal("(apply list 1 2 3 '(4 5))", "(1 2 3 4 5)");
+
+    check_equal(
+        "(apply call-with-values "
+          "(cons (lambda () 1) "
+          "(cons (lambda (x) (cons x 2)) "
+          "'())))",
+        "(1 . 2)"
+    );
+
+    return passed;
+}
+
 int test_misc(void) {
     passed = 1;
 
@@ -169,6 +189,7 @@ int main(int argc, char **argv) {
     log_test("call-with-values", test_callwv, return_code);
     log_test("call/cc", test_callcc, return_code);
     log_test("dynamic-wind", test_dynamic_wind, return_code);
+    log_test("apply", test_apply, return_code);
     log_test("misc", test_misc, return_code);
 
     minim_shutdown(return_code);

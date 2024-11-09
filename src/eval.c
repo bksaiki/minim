@@ -109,6 +109,27 @@ static void check_prim_arity(obj f, obj args) {
     minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
 }
 
+// performs `apply` primitive
+// flattens the last argument (checks that it is a list)
+static obj do_apply(obj args) {
+    obj hd;
+
+    if (Mnullp(Mcdr(args))) {
+        if (!Mlistp(Mcar(args)))
+            minim_error1("apply", "expected list?", Mcar(args));
+        return Mcar(args);
+    } else {
+        hd = args;
+        while (!Mnullp(Mcddr(args))) args = Mcdr(args);
+    
+        if (!Mlistp(Mcadr(args)))
+            minim_error1("apply", "expected list?", Mcadr(args));
+        Mcdr(args) = Mcadr(args);
+    
+        return hd;
+    }
+}
+
 // performs `values` primitive
 // if there is only 1 argument, the argument is returned
 // otherwise, the arguments are written to the values buffer
@@ -212,11 +233,14 @@ static obj do_prim(obj f, obj args) {
 
     switch (Mprim_arity(f))
     {
-    case 0: return fn();
-    case 1: return fn(Mcar(args));
-    case 2: return fn(Mcar(args), Mcadr(args));
-    case 3: return fn(Mcar(args), Mcadr(args), Mcaddr(args));
-    
+    case 0:
+        return fn();
+    case 1:
+        return fn(Mcar(args));
+    case 2:
+        return fn(Mcar(args), Mcadr(args));
+    case 3:
+        return fn(Mcar(args), Mcadr(args), Mcaddr(args));
     default:
         minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
     }
@@ -440,7 +464,13 @@ do_app:
     if (Mprimp(f)) {
         check_prim_arity(f, args);
         if (Mprim_specialp(f)) {
-            x = do_special_prim(f, args);
+            if (f == apply_prim) {
+                f = Mcar(args);
+                args = do_apply(Mcdr(args));
+                goto do_app;
+            } else {
+                x = do_special_prim(f, args);
+            }
         } else {
             x = do_prim(f, args);
         }
