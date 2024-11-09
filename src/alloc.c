@@ -50,6 +50,7 @@ obj Mcons(obj car, obj cdr) {
 obj Mprim(void *fn, iptr arity, const char *name) {
     obj x = GC_malloc(Mprim_size);
     obj_type(x) = PRIM_OBJ_TYPE;
+    Mprim_specialp(x) = 0;
     Mprim_value(x) = fn;
     Mprim_arity(x) = arity;
     Mprim_name(x) = Mintern(name);

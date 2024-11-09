@@ -11,7 +11,12 @@ int Mimmediatep(obj x) {
 }
 
 NORETURN void raise_arity_exn(obj prim, obj args) {
-    minim_error2(Mprim_name(prim), "arity mismatch", Mfixnum(Mprim_arity(prim)), Mlength(args));
+    minim_error2(
+        Msymbol_value(Mprim_name(prim)),
+        "arity mismatch",
+        Mfixnum(Mprim_arity(prim)),
+        Mlength(args)
+    );
 }
 
 static void clear_values_buffer(obj tc) {
@@ -22,6 +27,86 @@ static void assert_single_value(obj tc, obj x) {
     if (Mvaluesp(x)) {
         minim_error2(NULL, "values mismatch", Mfixnum(1), Mfixnum(Mtc_vc(tc)));
     }
+}
+
+static void check_callcc(obj f) {
+    if (Mprimp(f)) {
+        iptr arity = Mprim_arity(f);
+        if (arity < 0 ? arity < -2 : arity != 1)
+            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
+    } else if (Mclosurep(f)) {
+        iptr arity = Mclosure_arity(f);
+        if (arity < 0 ? arity < -2 : arity != 1)
+            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
+    } else if (Mcontinuationp(f)) {
+        // do nothing
+    } else {
+        minim_error1("call/cc", "expected a procedure", f);
+    }
+}
+
+static void assert_thunk(const char *name, obj f) {
+    if (Mprimp(f)) {
+        iptr arity = Mprim_arity(f);
+        if (arity < 0 ? arity != -1 : arity != 0)
+            minim_error1(name, "expected a procedure of at least 0 argument", f);
+    } else if (Mclosurep(f)) {
+        iptr arity = Mclosure_arity(f);
+        if (arity < 0 ? arity < -1 : arity != 0)
+            minim_error1(name, "expected a procedure of at least 0 argument", f);
+    } else if (Mcontinuationp(f)) {
+        // do nothing
+    } else {
+        minim_error1(name, "expected a procedure", f);
+    }
+}
+
+static void check_prim_arity(obj f, obj args) {
+    if (Mprim_arity(f) >= 0) {
+        switch (Mprim_arity(f)) {
+        case 0:
+            if (!Mnullp(args))
+                raise_arity_exn(f, args);
+            return;
+
+        case 1:
+            if (Mnullp(args) || !Mnullp(Mcdr(args)))
+                raise_arity_exn(f, args);
+            return;
+
+        case 2:
+            if (Mnullp(args) || Mnullp(Mcdr(args)) || !Mnullp(Mcddr(args)))
+                raise_arity_exn(f, args);
+            return;
+
+        case 3:
+            if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)) || !Mnullp(Mcdddr(args)))
+                raise_arity_exn(f, args);
+            return;
+        }
+    } else {
+        switch (-Mprim_arity(f) - 1) {
+        case 0:
+            return;
+
+        case 1:
+            if (Mnullp(args))
+                raise_arity_exn(f, args);
+            return;
+
+        case 2:
+            if (Mnullp(args) || Mnullp(Mcdr(args)))
+                raise_arity_exn(f, args);
+            return;
+
+        case 3:
+            if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)))
+                raise_arity_exn(f, args);
+            return;
+        }
+    }
+
+    minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
 }
 
 // performs `values` primitive
@@ -88,30 +173,49 @@ static obj values_to_list(void) {
     }
 }
 
+static obj do_special_prim(obj f, obj args) {
+    obj tc, x;
+
+    tc = Mcurr_tc();
+    if (f == list_prim) {
+        return args;
+    } else if (f == values_prim) {
+        return do_values(args);
+    } else if (f == void_prim) {
+        return Mvoid;
+    } else if (f == dynwind_prim) {
+        Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
+        return Mvoid;
+    } else if (f == callcc_prim) {
+        check_callcc(Mcar(args));
+        continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
+        Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
+        return Mcar(args);
+    } else if (f == callwv_prim) {
+        assert_thunk("call-with-values", Mcar(args));
+        Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args));
+        return Mvoid;
+    } else if (f == exit_prim) {
+        x = Mcar(args);
+        if (Mfixnump(x) && Mfixnum_value(x) >= 0 && Mfixnum_value(x) <= 0xFF) {
+            minim_shutdown(Mfixnum_value(x));
+        } else {
+            minim_shutdown(0);
+        }
+    } else {
+        minim_error1("do_special_prim()", "unimplemented", f);
+    }
+}
+
 static obj do_prim(obj f, obj args) {
     obj (*fn)() = Mprim_value(f);
 
     switch (Mprim_arity(f))
     {
-    case 0:
-        if (!Mnullp(args))
-            raise_arity_exn(f, args);
-        return fn();
-
-    case 1:
-        if (Mnullp(args) || !Mnullp(Mcdr(args)))
-            raise_arity_exn(f, args);
-        return fn(Mcar(args));
-
-    case 2:
-        if (Mnullp(args) || Mnullp(Mcdr(args)) || !Mnullp(Mcddr(args)))
-            raise_arity_exn(f, args);
-        return fn(Mcar(args), Mcadr(args));
-
-    case 3:
-        if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)) || !Mnullp(Mcdddr(args)))
-            raise_arity_exn(f, args);
-        return fn(Mcar(args), Mcadr(args));
+    case 0: return fn();
+    case 1: return fn(Mcar(args));
+    case 2: return fn(Mcar(args), Mcadr(args));
+    case 3: return fn(Mcar(args), Mcadr(args), Mcaddr(args));
     
     default:
         minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
@@ -261,38 +365,6 @@ static void do_setb(obj tc, obj x, obj v) {
     }
 }
 
-static void check_callcc(obj f) {
-    if (Mprimp(f)) {
-        iptr arity = Mprim_arity(f);
-        if (arity < 0 ? arity < -2 : arity != 1)
-            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
-    } else if (Mclosurep(f)) {
-        iptr arity = Mclosure_arity(f);
-        if (arity < 0 ? arity < -2 : arity != 1)
-            minim_error1("call/cc", "expected a procedure of at least 1 argument", f);
-    } else if (Mcontinuationp(f)) {
-        // do nothing
-    } else {
-        minim_error1("call/cc", "expected a procedure", f);
-    }
-}
-
-static void assert_thunk(const char *name, obj f) {
-    if (Mprimp(f)) {
-        iptr arity = Mprim_arity(f);
-        if (arity < 0 ? arity != -1 : arity != 0)
-            minim_error1(name, "expected a procedure of at least 0 argument", f);
-    } else if (Mclosurep(f)) {
-        iptr arity = Mclosure_arity(f);
-        if (arity < 0 ? arity < -1 : arity != 0)
-            minim_error1(name, "expected a procedure of at least 0 argument", f);
-    } else if (Mcontinuationp(f)) {
-        // do nothing
-    } else {
-        minim_error1(name, "expected a procedure", f);
-    }
-}
-
 static obj eval_k(obj e) {
     obj tc, x, hd, f, args;
 
@@ -366,22 +438,9 @@ loop:
 
 do_app:
     if (Mprimp(f)) {
-        if (f == list_prim) {
-            x = args;
-        } else if (f == values_prim) {
-            x = do_values(args);
-        } else if (f == dynwind_prim) {
-            Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
-            x = Mvoid;
-        } else if (f == callcc_prim) {
-            check_callcc(Mcar(args));
-            continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
-            Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
-            x = Mcar(args);
-        } else if (f == callwv_prim) {
-            assert_thunk("call-with-values", Mcar(args));
-            Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args));
-            x = Mvoid;
+        check_prim_arity(f, args);
+        if (Mprim_specialp(f)) {
+            x = do_special_prim(f, args);
         } else {
             x = do_prim(f, args);
         }

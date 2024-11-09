@@ -26,37 +26,31 @@ obj fx_lt_prim;
 
 obj callcc_prim;
 obj callwv_prim;
+obj exit_prim;
 obj dynwind_prim;
 obj values_prim;
+obj void_prim;
 
 // Wrapped procedures
 
-#define proc0(name, e) static obj name(void) { return (e); }
-#define proc1(name, x, e) static obj name(obj x) { return (e); }
+#define proc0(name, e) \
+    static obj name(void) { return (e); }
+#define proc1(name, x, e) \
+    static obj name(obj x) { return (e); }
+#define uncallable_proc(name) \
+    static obj name(obj x) { minim_error("" #name "()", "should never call"); }
 
 proc1(nullp_proc, x, Mbool(Mnullp(x)))
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
-static obj callcc_proc() {
-    minim_error("callcc_proc()", "should never call");
-}
-
-static obj callwv_proc() {
-    minim_error("callwv_proc()", "should never call");
-}
-
-static obj dynwind_proc() {
-    minim_error("dynwind_proc()", "should never call");
-}
-
-static obj list_proc() {
-    minim_error("list_proc()", "should never call");
-}
-
-static obj values_proc() {
-    minim_error("values_proc()", "should never call");
-}
+uncallable_proc(callcc_proc);
+uncallable_proc(callwv_proc);
+uncallable_proc(dynwind_proc);
+uncallable_proc(exit_proc);
+uncallable_proc(list_proc);
+uncallable_proc(values_proc);
+uncallable_proc(void_proc);
 
 // Public API
 
@@ -82,11 +76,22 @@ void init_prims(void) {
     fx_gt_prim = Mprim(Mfx_gt, 2, "fx2>");
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
 
+    void_prim = Mprim(void_proc, -1, "void");
+
     callcc_prim = Mprim(callcc_proc, 1, "call-with-current-continuation");
+    Mprim_specialp(callcc_prim) = 1;
     callwv_prim = Mprim(callwv_proc, 2, "call-with-values");
+    Mprim_specialp(callwv_prim) = 1;
     dynwind_prim = Mprim(dynwind_proc, 3, "dynamic-wind");
+    Mprim_specialp(dynwind_prim) = 1;
     list_prim = Mprim(list_proc, -1, "list");
+    Mprim_specialp(list_prim) = 1;
     values_prim = Mprim(values_proc, -1, "values");
+    Mprim_specialp(values_prim) = 1;
+    void_prim = Mprim(values_proc, -1, "void");
+    Mprim_specialp(void_prim) = 1;
+    exit_prim = Mprim(exit_proc, 1, "exit");
+    Mprim_specialp(exit_prim) = 1;
 }
 
 #define env_add_prim(e, p)  \
@@ -119,9 +124,11 @@ obj prim_env(obj env) {
     env_insert(env, Mintern("call/cc"), callcc_prim);
     env_add_prim(env, callcc_prim);
     env_add_prim(env, callwv_prim);
+    env_add_prim(env, exit_prim);
     env_add_prim(env, dynwind_prim);
     env_add_prim(env, list_prim);
     env_add_prim(env, values_prim);
+    env_add_prim(env, void_prim);
 
     return env;
 }

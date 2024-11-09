@@ -148,6 +148,16 @@ int test_dynamic_wind(void) {
     return passed;
 }
 
+int test_misc(void) {
+    passed = 1;
+
+    check_equal("(void)", "#<void>");
+    check_equal("(void 1)", "#<void>");
+    check_equal("(void 1 2 3)", "#<void>");
+
+    return passed;
+}
+
 
 int main(int argc, char **argv) {
     GC_init();
@@ -159,6 +169,7 @@ int main(int argc, char **argv) {
     log_test("call-with-values", test_callwv, return_code);
     log_test("call/cc", test_callcc, return_code);
     log_test("dynamic-wind", test_dynamic_wind, return_code);
+    log_test("misc", test_misc, return_code);
 
     minim_shutdown(return_code);
 }

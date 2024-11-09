@@ -186,13 +186,15 @@ obj Mcons(obj car, obj cdr);
 // Primitive
 // +------------+
 // |    type    | [0, 1)
+// |    special | [1, 2)
 // |    fn      | [8, 16)
 // |    arity   | [16, 24)
 // |    name    | [24, 32)
 // +------------+
 #define Mprim_size          (4 * ptr_size)
 #define Mprimp(o)           (obj_type(o) == PRIM_OBJ_TYPE)
-#define Mprim_value(o)      (*((void **) ptr_add(o, ptr_size)))
+#define Mprim_specialp(o)   (*((byte *) ptr_add(o, 1)))
+#define Mprim_value(o)      (*((obj *) ptr_add(o, ptr_size)))
 #define Mprim_arity(o)      (*((iptr*) ptr_add(o, 2 * ptr_size)))
 #define Mprim_name(o)       (*((obj *) ptr_add(o, 3 * ptr_size)))
 
@@ -479,8 +481,10 @@ extern obj fx_lt_prim;
 
 extern obj callcc_prim;
 extern obj callwv_prim;
+extern obj exit_prim;
 extern obj dynwind_prim;
 extern obj values_prim;
+extern obj void_prim;
 
 // Errors
 
