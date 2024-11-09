@@ -6,6 +6,9 @@ obj nullp_prim;
 obj cons_prim;
 obj car_prim;
 obj cdr_prim;
+obj length_prim;
+obj reverse_prim;
+obj append_prim;
 
 obj fx_neg_prim;
 obj fx_inc_prim;
@@ -43,6 +46,9 @@ void init_prims(void) {
     cons_prim = Mprim(Mcons, 2, "cons");
     car_prim = Mprim(car_proc, 1, "car");
     cdr_prim = Mprim(cdr_proc, 1, "cdr");
+    length_prim = Mprim(Mlength, 1, "length");
+    reverse_prim = Mprim(Mreverse, 1, "reverse");
+    append_prim = Mprim(Mappend, 2, "append");
 
     fx_neg_prim = Mprim(Mfx_neg, 1, "fxneg");
     fx_inc_prim = Mprim(Mfx_inc, 1, "fx1+");
@@ -70,6 +76,9 @@ obj prim_env(obj env) {
     env_add_prim(env, car_prim);
     env_add_prim(env, cdr_prim);
     env_add_prim(env, cons_prim);
+    env_add_prim(env, length_prim);
+    env_add_prim(env, reverse_prim);
+    env_add_prim(env, append_prim);
 
     env_add_prim(env, fx_neg_prim);
     env_add_prim(env, fx_inc_prim);

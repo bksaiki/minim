@@ -244,6 +244,25 @@ int test_dynamic_wind(void) {
     passed = 1;
 
     check_equal("(dynamic-wind (lambda () 1) (lambda () 2) (lambda () 3))", "2");
+    check_equal("(dynamic-wind (lambda () (values)) (lambda () 1) (lambda () (values 1 2)))", "1");
+
+    check_equal(
+        "(let ((path '()) (c #f)) "
+          "(let ((add (lambda (s) "
+                       "(set! path (cons s path))))) "
+            "(dynamic-wind "
+              "(lambda () (add 'connect)) "
+              "(lambda () "
+                "(add (call/cc "
+                        "(lambda (c0) "
+                          "(set! c c0) "
+                          "'talk1)))) "
+              "(lambda () (add 'disconnect))) "
+           "(if (fx2< (length path) 4) "
+               "(c 'talk2) "
+               "(reverse path))))",
+        "(disconnect talk2 connect disconnect talk1 connect)"
+    );
 
 
     return passed;

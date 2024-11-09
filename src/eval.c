@@ -530,7 +530,7 @@ do_k:
         switch (Mcontinuation_dynwind_state(Mtc_cc(tc))) {
         // unevaluated dynamic-wind
         case DYNWIND_NEW:
-            if (Mfalsep(Mcontinuation_dynwind_pre(Mtc_cc(tc)))) {
+            if (!Mprocp(Mcontinuation_dynwind_pre(Mtc_cc(tc)))) {
                 // evaluating pre thunk expression
                 assert_single_value(Mtc_cc(tc), x);
                 assert_thunk("dynamic-wind", x);
@@ -563,6 +563,7 @@ do_k:
 
         // evaluated pre thunk
         case DYNWIND_PRE:
+            clear_values_buffer(tc);
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_VAL;
             Mtc_wnd(tc) = Mcons(
                 Mcons(
@@ -595,6 +596,7 @@ do_k:
 
         // evaluated post thunk
         case DYNWIND_POST:
+            clear_values_buffer(tc);
             x = do_values(Mcontinuation_dynwind_val(Mtc_cc(tc)));
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
@@ -602,6 +604,35 @@ do_k:
         
         default:
             minim_error("dynamic-wind", "unimplemented");
+        }
+
+    // reinstalling winders
+    case WINDERS_CONT_TYPE:
+        if (Mnullp(Mcontinuation_winders_it(Mtc_cc(tc)))) {
+            // no more winders to execute
+            x = do_values(Mcontinuation_winders_values(Mtc_cc(tc)));
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
+            goto do_k;
+        } else {
+            // need to execute a winder
+            if (Mfalsep(Mcontinuation_winders_values(Mtc_cc(tc)))) {
+                // first time processing winders
+                Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
+                if (Mvaluesp(x)) {
+                    Mcontinuation_winders_values(Mtc_cc(tc)) = values_to_list();
+                    clear_values_buffer(Mtc_cc(tc));
+                } else {
+                    Mcontinuation_winders_values(Mtc_cc(tc)) = Mlist1(x);
+                }
+            }
+
+            // Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
+            f = Mcar(Mcontinuation_winders_it(Mtc_cc(tc)));
+            args = Mnull;
+
+            Mcontinuation_winders_it(Mtc_cc(tc)) = Mcdr(Mcontinuation_winders_it(Mtc_cc(tc)));
+            goto do_app;
         }
 
     // unknown

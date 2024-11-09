@@ -299,9 +299,10 @@ typedef enum {
 #define DYNWIND_POST    0x3
 #define Mcontinuation_dynwind_state(o)          (*((byte*) ptr_add(o, 6 * ptr_size)))
 
-#define Mcontinuation_winders_size          Mcontinuation_size(1)
+#define Mcontinuation_winders_size          Mcontinuation_size(2)
 #define Mcontinuation_windersp(o)           (Mcontinuation_type(o) == WINDERS_CONT_TYPE)
-#define Mcontinuation_winders_value(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_winders_it(o)         (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_winders_values(o)     (*((obj*) ptr_add(o, 4 * ptr_size)))
 
 obj Mnull_continuation(obj env);
 obj Mapp_continuation(obj prev, obj env, obj args);

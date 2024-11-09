@@ -223,7 +223,8 @@ obj Mwinders_continuation(obj prev, obj env, obj winders) {
     Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
-    Mcontinuation_winders_value(x) = winders;
+    Mcontinuation_winders_it(x) = winders;
+    Mcontinuation_winders_values(x) = Mfalse;
     return x;
 }
 
