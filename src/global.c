@@ -19,6 +19,8 @@ obj Mletrec_symbol;
 obj Mletrec_values_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
+obj Mwhen_symbol;
+obj Munless_symbol;
 
 obj Mdefine_symbol;
 obj Mdefine_values_symbol;
@@ -63,6 +65,8 @@ void minim_init(void) {
     Mletrec_values_symbol = Mintern("letrec-values");
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
+    Mwhen_symbol = Mintern("when");
+    Munless_symbol = Mintern("unless");
 
     Mdefine_symbol = Mintern("define");
     Mdefine_values_symbol = Mintern("define-values");

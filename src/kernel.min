@@ -15,11 +15,30 @@
 ;; --------------------------------------------------------
 ;; Contract-less primitives
 
+;; type predicates
+
 (export null?
-        cons
-        void)
+        symbol?
+        fixnum?
+        char?
+        string?
+        pair?
+        procedure?)
 
 (define null? $null?)
+(define symbol? $symbol?)
+(define fixnum? $fixnum?)
+(define char? $char?)
+(define string? $string?)
+(define pair? $pair?)
+(define procedure? $procedure?)
+
+;; constructors
+
+(export cons
+        list
+        void)
+
 (define cons $cons)
 (define list $list)
 (define void $void)
@@ -43,5 +62,3 @@
         (if (null? xs)
             (reverse ys)
             (loop (cdr xs) (cons (f (car xs)) ys))))))
-
-(map1 list '(a b c))

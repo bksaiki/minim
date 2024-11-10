@@ -62,6 +62,8 @@ extern obj Mletrec_symbol;
 extern obj Mletrec_values_symbol;
 extern obj Mquote_symbol;
 extern obj Msetb_symbol;
+extern obj Mwhen_symbol;
+extern obj Munless_symbol;
 
 extern obj Mdefine_symbol;
 extern obj Mdefine_values_symbol;
@@ -497,6 +499,13 @@ void write_obj(FILE *out, obj o);
 // Prims
 
 extern obj nullp_prim;
+extern obj symbolp_prim;
+extern obj fixnump_prim;
+extern obj charp_prim;
+extern obj stringp_prim;
+extern obj consp_prim;
+extern obj procp_prim;
+
 extern obj cons_prim;
 extern obj car_prim;
 extern obj cdr_prim;

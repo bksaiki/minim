@@ -3,6 +3,13 @@
 #include "minim.h"
 
 obj nullp_prim;
+obj symbolp_prim;
+obj fixnump_prim;
+obj charp_prim;
+obj stringp_prim;
+obj consp_prim;
+obj procp_prim;
+
 obj cons_prim;
 obj car_prim;
 obj cdr_prim;
@@ -44,6 +51,12 @@ obj void_prim;
     static obj name(obj x) { minim_error("" #name "()", "should never call"); }
 
 proc1(nullp_proc, x, Mbool(Mnullp(x)))
+proc1(symbolp_proc, x, Mbool(Msymbolp(x)))
+proc1(fixnump_proc, x, Mbool(Mfixnump(x)))
+proc1(charp_proc, x, Mbool(Mcharp(x)))
+proc1(stringp_proc, x, Mbool(Mstringp(x)))
+proc1(consp_proc, x, Mbool(Mconsp(x)))
+proc1(procp_proc, x, Mbool(Mprocp(x)))
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
@@ -60,6 +73,13 @@ uncallable_proc(void_proc);
 
 void init_prims(void) {
     nullp_prim = Mprim(nullp_proc, 1, "null?");
+    symbolp_prim = Mprim(symbolp_proc, 1, "symbol?");
+    fixnump_prim = Mprim(fixnump_proc, 1, "fixnum?");
+    charp_prim = Mprim(charp_proc, 1, "char?");
+    stringp_prim = Mprim(stringp_proc, 1, "string?");
+    consp_prim = Mprim(consp_proc, 1, "pair?");
+    procp_prim = Mprim(procp_proc, 1, "procedure?");
+
     cons_prim = Mprim(Mcons, 2, "cons");
     car_prim = Mprim(car_proc, 1, "car");
     cdr_prim = Mprim(cdr_proc, 1, "cdr");
@@ -107,6 +127,13 @@ obj prim_env(obj env) {
     env = env_extend(env);
 
     env_add_prim(env, nullp_prim);
+    env_add_prim(env, symbolp_prim);
+    env_add_prim(env, fixnump_prim);
+    env_add_prim(env, charp_prim);
+    env_add_prim(env, stringp_prim);
+    env_add_prim(env, consp_prim);
+    env_add_prim(env, procp_prim);
+
     env_add_prim(env, car_prim);
     env_add_prim(env, cdr_prim);
     env_add_prim(env, cons_prim);
