@@ -20,6 +20,10 @@ obj Mletrec_values_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
 
+obj Mimport_symbol;
+obj Mdefine_symbol;
+obj Mdefine_values_symbol;
+
 intern_table *itab;
 obj *Mcurr_tc_box;
 
@@ -41,10 +45,12 @@ void minim_init(void) {
     obj_type(Munbound) = SPECIAL_OBJ_TYPE;
 
     // intern table
+
     itab = make_intern_table();
     GC_add_roots(itab, ptr_add(itab, sizeof(intern_table)));
 
     // intern symbols
+
     Mbegin_symbol = Mintern("begin");
     Mif_symbol = Mintern("if");
     Mlambda_symbol = Mintern("lambda");
@@ -54,6 +60,10 @@ void minim_init(void) {
     Mletrec_values_symbol = Mintern("letrec-values");
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
+
+    Mimport_symbol = Mintern("import");
+    Mdefine_symbol = Mintern("define");
+    Mdefine_values_symbol = Mintern("define-values");
 
     // initialize thread context
     Mcurr_tc_box = GC_malloc_uncollectable(sizeof(obj));

@@ -24,10 +24,10 @@
 
 // Type aliases
 
-typedef uint8_t         byte;
-typedef uintptr_t       uptr;
-typedef intptr_t        iptr;
-typedef void            *obj;
+typedef uint8_t     byte;
+typedef uintptr_t   uptr;
+typedef intptr_t    iptr;
+typedef void        *obj;
 
 // system constants
 
@@ -63,6 +63,10 @@ extern obj Mletrec_values_symbol;
 extern obj Mquote_symbol;
 extern obj Msetb_symbol;
 
+extern obj Mimport_symbol;
+extern obj Mdefine_symbol;
+extern obj Mdefine_values_symbol;
+
 // Object types
 
 typedef enum {
@@ -76,7 +80,8 @@ typedef enum {
     CLOSURE_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
     PORT_OBJ_TYPE,
-    THREAD_OBJ_TYPE
+    THREAD_OBJ_TYPE,
+    MODULE_OBJ_TYPE
 } obj_type_t;
 
 // Objects
@@ -350,8 +355,11 @@ void port_write(int c, obj p);
 // |    vb      | [32, 40)      // values buffer
 // |    va      | [40, 48)      // values buffer allocation size
 // |    vc      | [48, 56)      // values buffer count
+// |    ip      | [56, 64)      // current input port
+// |    op      | [64, 72)      // current output port
+// |    ep      | [72, 80)      // current error port
 // +------------+
-#define Mtc_size            (7 * ptr_size)
+#define Mtc_size            (10 * ptr_size)
 #define Mtcp(o)             (obj_type(o) == THREAD_OBJ_TYPE)
 #define Mtc_cc(o)           (*((obj*) ptr_add(o, ptr_size)))
 #define Mtc_wnd(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
@@ -359,8 +367,30 @@ void port_write(int c, obj p);
 #define Mtc_vb(o)           (*((obj**) ptr_add(o, 4 * ptr_size)))
 #define Mtc_va(o)           (*((uptr*) ptr_add(o, 5 * ptr_size)))
 #define Mtc_vc(o)           (*((uptr*) ptr_add(o, 6 * ptr_size)))
+#define Mtc_ip(o)           (*((obj*) ptr_add(o, 7 * ptr_size)))
+#define Mtc_op(o)           (*((obj*) ptr_add(o, 8 * ptr_size)))
+#define Mtc_ep(o)           (*((obj*) ptr_add(o, 9 * ptr_size)))
 
 obj Mthread_context(void);
+
+// Module
+// +------------+
+// |    type    | [0, 1)
+// |    live?   | [1, 2)
+// |    path    | [8, 16)
+// |   subpath  | [16, 24)
+// |    body    | [24, 32)
+// |    env     | [32, 40)
+// +------------+
+#define Mmodule_size            (5 * ptr_size)
+#define Mmodulep(o)             (obj_type(o) == MODULE_OBJ_TYPE)
+#define Mmodule_livep(o)        (*((byte*) ptr_add(o, 1)))
+#define Mmodule_path(o)         (*((obj*) ptr_add(o, ptr_size)))
+#define Mmodule_subpath(o)      (*((obj*) ptr_add(o, 2 * ptr_size)))
+#define Mmodule_body(o)         (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mmodule_env(o)          (*((obj*) ptr_add(o, 4 * ptr_size)))
+
+obj Mmodule(obj path, obj subpath, obj body);
 
 // Composite predicates
 
@@ -439,8 +469,13 @@ obj prim_env(obj env);
 int Mimmediatep(obj x);
 
 void check_expr(obj e);
+void check_module(obj mod);
+
 obj expand_expr(obj e);
+void expand_module(obj mod);
+
 obj eval_expr(obj e);
+obj eval_module(obj mod);
 
 // Reading
 
@@ -493,6 +528,10 @@ NORETURN void minim_error(const char *name, const char *msg);
 NORETURN void minim_error1(const char *name, const char *msg, obj x);
 NORETURN void minim_error2(const char *name, const char *msg, obj x, obj y);
 NORETURN void minim_error3(const char *name, const char *msg, obj x, obj y, obj z);
+
+// Modules
+
+void load_kernel(void);
 
 // Intern table
 

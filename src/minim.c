@@ -3,7 +3,7 @@
 #include "minim.h"
 
 int main(int argc, char **argv) {
-    obj tc, ip, e, v;
+    obj tc, e, v;
 
     printf("Minim v%s\n", MINIM_VERSION);
 
@@ -11,14 +11,15 @@ int main(int argc, char **argv) {
     minim_init();
 
     tc = Mcurr_tc();
-    ip = Minput_file_port(stdin);
-    Mtc_env(tc) = prim_env(empty_env());
+    Mtc_env(tc) = prim_env(Mtc_env(tc));
+
+    load_kernel();
 
     while (1) {
         fputs("> ", stdout);
         fflush(stdout);
 
-        e = read_object(ip);
+        e = read_object(Mtc_ip(tc));
         v = eval_expr(e);
     
         write_obj(stdout, v);

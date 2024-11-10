@@ -55,6 +55,7 @@ static void skip_whitespace(obj ip) {
             for (c = port_peek(ip); c != '\n'; c = port_peek(ip))
                 port_read(ip);
             port_read(ip);
+            continue;
         }
 
         break;

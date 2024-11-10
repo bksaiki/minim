@@ -245,3 +245,8 @@ void check_expr(obj e) {
         minim_error1(NULL, "bad syntax", e);
     }
 }
+
+
+void check_module(obj mod) {
+    
+}

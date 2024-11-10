@@ -9,7 +9,7 @@ int port_readyp(obj p) {
     } else {
         int c = getc(Mport_file(p));
         ungetc(c, Mport_file(p));
-        return c == EOF;
+        return c != EOF;
     } 
 }
 

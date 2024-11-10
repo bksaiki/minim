@@ -38,6 +38,30 @@ loop:
     fputc(')', out);
 }
 
+static void write_module(FILE *out, obj o) {
+    obj path, subpath;
+
+    path = Mmodule_path(o);
+    subpath = Mmodule_subpath(o);
+    if (Mfalsep(path) && Mfalsep(subpath)) {
+        fputs("#<module>", out);
+    } else if (Mfalsep(subpath)) {
+        fputs("#<module:", out);
+        write_obj(out, path);
+        fputc('>', out);
+    } else if (Mfalsep(path)) {
+        fputs("#<module:#f ", out);
+        write_obj(out, subpath);
+        fputc('>', out);
+    } else {
+        fputs("#<module:", out);
+        write_obj(out, path);
+        fputc(' ', out);
+        write_obj(out, subpath);
+        fputc('>', out);
+    }
+}
+
 void write_obj(FILE *out, obj o) {
     if (Mnullp(o)) {
         fputs("()", out);
@@ -81,6 +105,8 @@ void write_obj(FILE *out, obj o) {
         fputs("#<output-port>", out);
     } else if (Mcontinuationp(o)) {
         fputs("#<procedure>", out);
+    } else if (Mmodulep(o)) {
+        write_module(out, o);
     } else {
         fputs("#<garbage>", out);
     }

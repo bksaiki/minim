@@ -1,0 +1,10 @@
+(import #%kernel)
+
+(define map1
+  (lambda (f xs)
+    (if (null? xs)
+        '()
+        (let loop ([xs xs] [ys ys])
+          (if (null? xs)
+              (reverse ys)
+              (loop (cdr xs) (cons (f (car xs)) ys)))))))

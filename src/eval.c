@@ -229,18 +229,28 @@ static obj do_special_prim(obj f, obj args) {
 }
 
 static obj do_prim(obj f, obj args) {
-    obj (*fn)() = Mprim_value(f);
-
     switch (Mprim_arity(f))
     {
     case 0:
-        return fn();
+        {
+            obj (*fn)(void) = Mprim_value(f);
+            return fn();
+        }
     case 1:
-        return fn(Mcar(args));
+        {
+            obj (*fn)(obj) = Mprim_value(f);
+            return fn(Mcar(args));
+        }
     case 2:
-        return fn(Mcar(args), Mcadr(args));
+        {
+            obj (*fn)(obj, obj) = Mprim_value(f);
+            return fn(Mcar(args), Mcadr(args));
+        }
     case 3:
-        return fn(Mcar(args), Mcadr(args), Mcaddr(args));
+        {
+            obj (*fn)(obj, obj, obj) = Mprim_value(f);
+            return fn(Mcar(args), Mcadr(args), Mcaddr(args));
+        }
     default:
         minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
     }
@@ -701,4 +711,27 @@ obj eval_expr(obj e) {
     Mtc_cc(tc) = k;
     Mtc_env(tc) = env;
     return v;
+}
+
+obj eval_module(obj mod) {
+    obj tc, k, env, menv;
+
+    // stash old continuation and environment
+    tc = Mcurr_tc();
+    k = Mtc_cc(tc);
+    env = Mtc_env(tc);
+
+    // check module syntax
+
+
+    // evaluating the module with an empty environment
+    menv = empty_env();
+    Mtc_env(tc) = menv;
+    Mtc_cc(tc) = Mnull_continuation(Mtc_env(tc));
+
+    // restore old continuation and environment
+    Mtc_cc(tc) = k;
+    Mtc_env(tc) = env;
+
+    return menv;
 }

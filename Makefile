@@ -52,7 +52,7 @@ $(BUILD_DIR)/libgc.a: $(GC_DIR)/Makefile
 
 $(CONFIG):
 	echo "#define MINIM_X86_64 1" >> $@
-	echo "#define PRELUDE_PATH \"$(shell pwd)/s/prelude.min\"" >> $@
+	echo "#define KERNEL_PATH \"$(realpath $(SRC_DIR))/kernel.min\"" >> $@
 
 $(BUILD_DIR):
 	$(MKDIR_P) $@

@@ -234,9 +234,23 @@ obj Mthread_context(void) {
     obj_type(x) = THREAD_OBJ_TYPE;
     Mtc_cc(x) = Mnull;
     Mtc_wnd(x) = Mnull;
-    Mtc_env(x) = Mnull;
+    Mtc_env(x) = empty_env();
     Mtc_vb(x) = GC_malloc(INIT_VALUES_BUFFER_LEN * sizeof(obj));
     Mtc_va(x) = INIT_VALUES_BUFFER_LEN;
     Mtc_vc(x) = 0;
+    Mtc_ip(x) = Minput_file_port(stdin);
+    Mtc_op(x) = Moutput_file_port(stdout);
+    Mtc_ep(x) = Moutput_file_port(stderr);
+    return x;
+}
+
+obj Mmodule(obj path, obj subpath, obj body) {
+    obj x = GC_malloc(Mmodule_size);
+    obj_type(x) = MODULE_OBJ_TYPE;
+    Mmodule_livep(x) = 0;
+    Mmodule_path(x) = path;
+    Mmodule_subpath(x) = subpath;
+    Mmodule_body(x) = body;
+    Mmodule_env(x) = Mfalse;
     return x;
 }
