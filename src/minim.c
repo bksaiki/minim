@@ -11,8 +11,6 @@ int main(int argc, char **argv) {
     minim_init();
 
     tc = Mcurr_tc();
-    Mtc_env(tc) = prim_env(Mtc_env(tc));
-
     load_kernel();
     module_import(Mkernel_symbol);
 

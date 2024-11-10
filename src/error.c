@@ -34,3 +34,14 @@ void minim_error2(const char *name, const char *msg, obj x, obj y) {
 void minim_error3(const char *name, const char *msg, obj x, obj y, obj z) {
     do_error(name, msg, Mlist3(x, y, z));
 }
+
+obj Mkernel_error(obj who, obj msg, obj args) {
+    fprintf(stderr, "error caught before error handlers initialized\n");
+    fprintf(stderr, "who: ");
+    writeln_object(stderr, who);
+    fprintf(stderr, "msg: ");
+    writeln_object(stderr, msg);
+    fprintf(stderr, "args: ");
+    writeln_object(stderr, args);
+    minim_shutdown(1);
+}

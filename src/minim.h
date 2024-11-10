@@ -411,6 +411,7 @@ obj env_extend(obj env);
 obj env_find(obj env, obj k);
 void env_insert(obj env, obj k, obj v);
 void import_env(obj dst, obj src);
+void import_env_prefix(obj dst, obj src, obj prefix);
 
 // Fixnums
 
@@ -531,6 +532,8 @@ NORETURN void minim_error(const char *name, const char *msg);
 NORETURN void minim_error1(const char *name, const char *msg, obj x);
 NORETURN void minim_error2(const char *name, const char *msg, obj x, obj y);
 NORETURN void minim_error3(const char *name, const char *msg, obj x, obj y, obj z);
+
+obj Mkernel_error(obj who, obj msg, obj args);
 
 // Modules
 

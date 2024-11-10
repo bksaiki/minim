@@ -187,6 +187,28 @@ static void check_lambda(obj e) {
     check_formals(e, Mcadr(e));
 }
 
+static void check_import_spec(obj e, obj spec) {
+    obj rib, hd;
+
+    if (Mconsp(spec)) {
+        hd = Mcar(spec);
+        if (hd == Mintern("prefix")) {
+            // (prefix <spec> <identifier)
+            rib = Mcdr(spec);
+            if (Mnullp(rib) || Mnullp(Mcdr(rib)) || !Mnullp(Mcddr(rib))) {
+                bad_syntax_exn(e);
+            }
+
+            check_import_spec(e, Mcar(rib));
+            assert_identifier(e, Mcadr(rib));
+        } else {
+            bad_syntax_exn(e);
+        }
+    } else if (!Msymbolp(spec) && !Mstringp(spec)) {
+        bad_syntax_exn(e);
+    }
+}
+
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> ...)`
 static void check_import(obj e) {
@@ -194,13 +216,7 @@ static void check_import(obj e) {
 
     for (rib = Mcdr(e); !Mnullp(rib); rib = Mcdr(rib)) {
         spec = Mcar(rib);
-        if (Msymbolp(spec) || Mstringp(spec)) {
-            // do nothing
-        } else if (Mlistp(spec)) {
-            minim_error1("check_import()", "unimplemented", e);
-        } else {
-            minim_error1("check_import()", "unimplemented", e);
-        }
+        check_import_spec(e, spec);
     }
 
     if (!Mnullp(rib))

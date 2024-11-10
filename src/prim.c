@@ -24,6 +24,8 @@ obj fx_le_prim;
 obj fx_gt_prim;
 obj fx_lt_prim;
 
+obj error_prim;
+
 obj apply_prim;
 obj callcc_prim;
 obj callwv_prim;
@@ -68,17 +70,17 @@ void init_prims(void) {
     fx_neg_prim = Mprim(Mfx_neg, 1, "fxneg");
     fx_inc_prim = Mprim(Mfx_inc, 1, "fx1+");
     fx_dec_prim = Mprim(Mfx_dec, 1, "fx1-");
-    fx_add_prim = Mprim(Mfx_add, 2, "fx2+");
-    fx_sub_prim = Mprim(Mfx_sub, 2, "fx2-");
-    fx_mul_prim = Mprim(Mfx_mul, 2, "fx2*");
-    fx_div_prim = Mprim(Mfx_div, 2, "fx2/");
-    fx_eq_prim = Mprim(Mfx_eq, 2, "fx2=");
-    fx_ge_prim = Mprim(Mfx_ge, 2, "fx2>=");
-    fx_le_prim = Mprim(Mfx_le, 2, "fx2<=");
-    fx_gt_prim = Mprim(Mfx_gt, 2, "fx2>");
-    fx_lt_prim = Mprim(Mfx_lt, 2, "fx2<");
+    fx_add_prim = Mprim(Mfx_add, 2, "fx+");
+    fx_sub_prim = Mprim(Mfx_sub, 2, "fx-");
+    fx_mul_prim = Mprim(Mfx_mul, 2, "fx*");
+    fx_div_prim = Mprim(Mfx_div, 2, "fx/");
+    fx_eq_prim = Mprim(Mfx_eq, 2, "fx=");
+    fx_ge_prim = Mprim(Mfx_ge, 2, "fx>=");
+    fx_le_prim = Mprim(Mfx_le, 2, "fx<=");
+    fx_gt_prim = Mprim(Mfx_gt, 2, "fx>");
+    fx_lt_prim = Mprim(Mfx_lt, 2, "fx<");
 
-    void_prim = Mprim(void_proc, -1, "void");
+    error_prim = Mprim(error_prim, 3, "error");
 
     apply_prim = Mprim(apply_proc, -3, "apply");
     Mprim_specialp(apply_prim) = 1;
@@ -92,7 +94,7 @@ void init_prims(void) {
     Mprim_specialp(list_prim) = 1;
     values_prim = Mprim(values_proc, -1, "values");
     Mprim_specialp(values_prim) = 1;
-    void_prim = Mprim(values_proc, -1, "void");
+    void_prim = Mprim(void_proc, -1, "void");
     Mprim_specialp(void_prim) = 1;
     exit_prim = Mprim(exit_proc, 1, "exit");
     Mprim_specialp(exit_prim) = 1;
@@ -124,6 +126,8 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_le_prim);
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
+
+    env_add_prim(env, error_prim);
 
     env_add_prim(env, apply_prim);
     env_insert(env, Mintern("call/cc"), callcc_prim);

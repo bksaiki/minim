@@ -1,11 +1,47 @@
-(import #%c-kernel)
-(export map1)
+(import (prefix #%c-kernel $))
 
-(define map1
-  (lambda (f xs)
-    (if (null? xs)
-        '()
-        (let loop ([xs xs] [ys '()])
-          (if (null? xs)
-              (reverse ys)
-              (loop (cdr xs) (cons (f (car xs)) ys)))))))
+;; --------------------------------------------------------
+;; Low-level exceptions
+
+(export error
+        raise-argument-error)
+
+(define (error who msg . args)
+  ($error who msg args))
+
+(define (raise-argument-error who expect v)
+  (error who "contract violation" expect v))
+
+;; --------------------------------------------------------
+;; Contract-less primitives
+
+(export null?
+        cons
+        void)
+
+(define null? $null?)
+(define cons $cons)
+(define list $list)
+(define void $void)
+
+;; --------------------------------------------------------
+;; Pairs
+
+; (define (car x)
+;   (if ()
+;    (raise-argument-error 'car "pair?" x)
+      
+
+
+;; --------------------------------------------------------
+;; Lists
+
+(define (map1 f xs)
+  (if (null? xs)
+      '()
+      (let loop ([xs xs] [ys '()])
+        (if (null? xs)
+            (reverse ys)
+            (loop (cdr xs) (cons (f (car xs)) ys))))))
+
+(map1 list '(a b c))

@@ -50,7 +50,7 @@ int test_callwv(void) {
     check_equal("(call-with-values (lambda () (values)) (lambda xs xs))", "()");
     check_equal("(call-with-values (lambda () (values 1)) (lambda xs xs))", "(1)");
     check_equal("(call-with-values (lambda () (values 1 2 3)) (lambda xs xs))", "(1 2 3)");
-    check_equal("(call-with-values (lambda () (values 1 2)) fx2+)", "3");
+    check_equal("(call-with-values (lambda () (values 1 2)) fx+)", "3");
 
     return passed;
 }
@@ -94,17 +94,17 @@ int test_callcc(void) {
     check_equal("(let ([x #f]) (cons 1 (call/cc (lambda (k) (set! x k) 2))))", "(1 . 2)");
 
     // from ChezScheme documentation
-    check_equal("(call/cc (lambda (k) (fx2* 5 (k 4))))", "4");
-    check_equal("(fx2+ 2 (call/cc (lambda (k) (fx2* 5 (k 4)))))", "6");
+    check_equal("(call/cc (lambda (k) (fx* 5 (k 4))))", "4");
+    check_equal("(fx+ 2 (call/cc (lambda (k) (fx* 5 (k 4)))))", "6");
     check_equal("(letrec ([product "
                   "(lambda (xs) "
                     "(call/cc "
                       "(lambda (break) "
                         "(if (null? xs) "
                             "1 "
-                            "(if (fx2= (car xs) 0) "
+                            "(if (fx= (car xs) 0) "
                                 "(break 0) "
-                                "(fx2* (car xs) (product (cdr xs))))))))]) "
+                                "(fx* (car xs) (product (cdr xs))))))))]) "
                   "(product '(7 3 8 0 1 9 5)))",
                 "0");
     check_equal("(let ([x (call/cc (lambda (k) k))]) "
@@ -113,7 +113,7 @@ int test_callcc(void) {
     
     check_equal("(letrec ([k* #f] "
                          "[y (fx1+ (call/cc (lambda (k) (set! k* k) 0)))]) "
-                  "(if (fx2< y 5) "
+                  "(if (fx< y 5) "
                       "(k* y) "
                       "y))",
                 "5");
@@ -139,7 +139,7 @@ int test_dynamic_wind(void) {
                           "(set! c c0) "
                           "'talk1)))) "
               "(lambda () (add 'disconnect))) "
-           "(if (fx2< (length path) 4) "
+           "(if (fx< (length path) 4) "
                "(c 'talk2) "
                "(reverse path))))",
         "(connect talk1 disconnect connect talk2 disconnect)"

@@ -481,6 +481,10 @@ do_app:
         if (Mprim_specialp(f)) {
             if (f == apply_prim) {
                 f = Mcar(args);
+                if (!Mprocp(f)) {
+                    minim_error1("apply", "expected procedure", f);
+                }
+
                 args = do_apply(Mcdr(args));
                 goto do_app;
             } else {

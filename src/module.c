@@ -23,27 +23,44 @@ static obj read_file(obj ip) {
 }
 
 void module_import(obj spec) {
-    obj tc, c_kernel;
+    obj tc, hd, prefix, prims;
 
     tc = Mcurr_tc();
+    prefix = Mfalse;
+
+loop:
     if (Mconsp(spec)) {
-        minim_error1("do_import()", "unimplemented", spec);
+        hd = Mcar(spec);
+        if (hd == Mintern("prefix")) {
+            prefix = Mcaddr(spec);
+            spec = Mcadr(spec);
+            goto loop;
+        } else {
+            minim_error1("module_import()", "unimplemented", spec);
+        }
     } else if (Msymbolp(spec)) {
-        c_kernel = Mintern("#%c-kernel");
-    
-        if (spec == c_kernel) {
-            import_env(Mtc_env(tc), prim_env(empty_env()));
+        if (spec == Mintern("#%c-kernel")) {
+            prims = prim_env(empty_env());
+            if (Mfalsep(prefix)) {
+                import_env(Mtc_env(tc), prims);
+            } else {
+                import_env_prefix(Mtc_env(tc), prims, prefix);
+            }
         } else if (spec == Mkernel_symbol) {
             if (Mkernel == NULL) {
                 minim_error("import", "attempting to load uninitialized kernel");
             }
 
-            import_env(Mtc_env(tc), Mmodule_env(Mkernel));
+            if (Mfalsep(prefix)) {
+                import_env(Mtc_env(tc), Mmodule_env(Mkernel));
+            } else {
+                import_env_prefix(Mtc_env(tc), Mmodule_env(Mkernel), prefix);
+            }
         } else {
             minim_error1("import", "cannot find library", spec);
         }
     } else {
-        minim_error1("module_import()", "unreachable", spec);
+        minim_error1("module_import()", "unimplemented", spec);
     }
 }
 

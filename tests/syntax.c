@@ -144,8 +144,8 @@ int test_let_loop(void) {
     passed = 1;
 
     check_equal("(let f () 1)", "1");
-    check_equal("(let f ([x 5]) (if (fx2<= x 0) #t (f (fx1- x))))", "#t");
-    check_equal("(let f ([x 5] [y 3]) (if (fx2<= x 0) y (f (fx1- x) (fx1+ y))))", "8");
+    check_equal("(let f ([x 5]) (if (fx<= x 0) #t (f (fx1- x))))", "#t");
+    check_equal("(let f ([x 5] [y 3]) (if (fx<= x 0) y (f (fx1- x) (fx1+ y))))", "8");
 
     return passed;
 }
