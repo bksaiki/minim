@@ -1,4 +1,5 @@
-(import #%kernel)
+(import #%c-kernel)
+(export map1)
 
 (define map1
   (lambda (f xs)

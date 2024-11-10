@@ -21,6 +21,7 @@ obj Mquote_symbol;
 obj Msetb_symbol;
 
 obj Mimport_symbol;
+obj Mexport_symbol;
 obj Mdefine_symbol;
 obj Mdefine_values_symbol;
 
@@ -62,6 +63,7 @@ void minim_init(void) {
     Msetb_symbol = Mintern("set!");
 
     Mimport_symbol = Mintern("import");
+    Mexport_symbol = Mintern("export");
     Mdefine_symbol = Mintern("define");
     Mdefine_values_symbol = Mintern("define-values");
 

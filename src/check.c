@@ -12,6 +12,16 @@ NORETURN static void bad_syntax_exn(obj form) {
     minim_error1(Msymbol_value(Mcar(form)), "bad syntax", form);
 }
 
+static void check_formals(obj e, obj args) {
+    for (; Mconsp(args); args = Mcdr(args)) {
+        assert_identifier(e, Mcar(args));
+    }
+
+    if (!Mnullp(args)) {
+        assert_identifier(e, args);
+    }
+}
+
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum>)
 static void check_1ary_syntax(obj e) {
@@ -174,13 +184,92 @@ static void check_begin(obj e) {
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> ...)`
 static void check_lambda(obj e) {
-    obj args = Mcadr(e);
-    for (; Mconsp(args); args = Mcdr(args)) {
-        assert_identifier(e, Mcar(args));
+    check_formals(e, Mcadr(e));
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> ...)`
+static void check_import(obj e) {
+    obj rib, spec;
+
+    for (rib = Mcdr(e); !Mnullp(rib); rib = Mcdr(rib)) {
+        spec = Mcar(rib);
+        if (Msymbolp(spec) || Mstringp(spec)) {
+            // do nothing
+        } else if (Mlistp(spec)) {
+            minim_error1("check_import()", "unimplemented", e);
+        } else {
+            minim_error1("check_import()", "unimplemented", e);
+        }
     }
 
-    if (!Mnullp(args)) {
-        assert_identifier(e, args);
+    if (!Mnullp(rib))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> ...)`
+static void check_export(obj e) {
+    obj rib, spec;
+
+    for (rib = Mcdr(e); !Mnullp(rib); rib = Mcdr(rib)) {
+        spec = Mcar(rib);
+        if (Msymbolp(spec)) {
+            // do nothing
+        } else if (Mlistp(spec)) {
+            minim_error1("check_import()", "unimplemented", e);
+        } else {
+            minim_error1("check_import()", "unimplemented", e);
+        }
+    }
+
+    if (!Mnullp(rib))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> ...)`
+static void check_define_values(obj e) {
+    minim_error1("check_define_values()", "unimplemented", e);
+}
+
+// static void check_define_
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> ...)`
+static void check_define(obj e) {
+    obj rib, hd, id;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    hd = Mcar(rib);
+    if (Msymbolp(hd)) {
+        // (define <id> <expr>)
+        rib = Mcdr(rib);
+        if (!Mconsp(rib) || !Mnullp(Mcdr(rib)))
+            bad_syntax_exn(e);
+
+        check_expr(Mcar(rib));
+    } else if (Mconsp(hd)) {
+        // (define (<id> . <formals>) <expr> ...)
+loop:
+        id = Mcar(hd);
+        check_formals(e, Mcdr(hd));
+        if (Msymbolp(id)) {
+            // do nothing
+        } else if (Mconsp(id)) {
+            hd = id;
+            goto loop;
+        } else {
+            bad_syntax_exn(e);
+        }
+
+        for (rib = Mcdr(rib); !Mnullp(rib); rib = Mcdr(rib))
+            check_expr(Mcar(rib));      
+    } else {
+        bad_syntax_exn(e);
     }
 }
 
@@ -246,7 +335,26 @@ void check_expr(obj e) {
     }
 }
 
-
 void check_module(obj mod) {
-    
+    obj es, e, hd;
+
+    for (es = Mmodule_body(mod); !Mnullp(es); es = Mcdr(es)) {
+        e = Mcar(es);
+        if (Mconsp(e)) {
+            hd = Mcar(e);
+            if (hd == Mimport_symbol) {
+                check_import(e);
+            } else if (hd == Mexport_symbol) {
+                check_export(e);
+            } else if (hd == Mdefine_values_symbol) {
+                check_define_values(e);
+            } else if (hd == Mdefine_symbol) {
+                check_define(e);
+            } else {
+                check_expr(e);
+            }
+        } else {
+            check_expr(e);
+        }
+    }
 }

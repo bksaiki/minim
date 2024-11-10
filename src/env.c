@@ -24,3 +24,20 @@ obj env_find(obj env, obj k) {
 void env_insert(obj env, obj k, obj v) {
     Mcar(env) = Mcons(Mcons(k, v), Mcar(env));
 }
+
+void import_env(obj dst, obj src) {
+    obj r, cell;
+
+    for (; !Mnullp(src); src = Mcdr(src)) {
+        for (r = Mcar(src); !Mnullp(r); r = Mcdr(r)) {
+            cell = env_find(dst, Mcaar(r));
+            if (Mfalsep(cell)) {
+                // no current binding => insert new one
+                env_insert(dst, Mcaar(r), Mcdar(r));
+            } else {
+                // current binding => overwrite it
+                Mcdr(cell) = Mcdar(r);
+            }
+        }
+    }
+}

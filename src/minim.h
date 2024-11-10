@@ -64,6 +64,7 @@ extern obj Mquote_symbol;
 extern obj Msetb_symbol;
 
 extern obj Mimport_symbol;
+extern obj Mexport_symbol;
 extern obj Mdefine_symbol;
 extern obj Mdefine_values_symbol;
 
@@ -408,6 +409,7 @@ obj empty_env(void);
 obj env_extend(obj env);
 obj env_find(obj env, obj k);
 void env_insert(obj env, obj k, obj v);
+void import_env(obj dst, obj src);
 
 // Fixnums
 
@@ -475,7 +477,7 @@ obj expand_expr(obj e);
 void expand_module(obj mod);
 
 obj eval_expr(obj e);
-obj eval_module(obj mod);
+void eval_module(obj mod);
 
 // Reading
 

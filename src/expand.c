@@ -209,6 +209,29 @@ static obj expand_letrec_expr(obj e) {
     return Mcons(Mlet_symbol, Mcons(binds, body));
 }
 
+// (define <id> <expr>)
+// =>
+// (define-values (<id>) <expr>)
+//
+// (define (<id> . <formals>) <expr> ...)
+// =>
+// (define <id> (lambda <formals> <expr> ...))
+static obj expand_define_expr(obj e) {
+    obj id, formals;
+
+loop:
+    id = Mcadr(e);
+    if (Msymbolp(id)) {
+        return Mlist3(Mdefine_values_symbol, Mlist1(id), expand_expr(Mcaddr(e)));
+    } else {
+        formals = Mcdr(id);
+        id = Mcar(id);
+        e = Mlist3(Mdefine_symbol, id, Mcons(Mlambda_symbol, Mcons(formals, Mcddr(e))));
+        goto loop;
+    }
+}
+
+
 
 obj expand_expr(obj e) {
     obj hd, tl, it;
@@ -302,5 +325,33 @@ loop:
         return e;
     } else {
         minim_error1("expand_expr", "unreachable", e);
+    }
+}
+
+void expand_module(obj mod) {
+    obj es, e, hd;
+
+    for (es = Mmodule_body(mod); !Mnullp(es); es = Mcdr(es)) {
+        e = Mcar(es);
+        if (Mconsp(e)) {
+            hd = Mcar(e);
+            if (hd == Mimport_symbol) {
+                // import => do nothing
+            } else if (hd == Mexport_symbol) {
+                // export => do nothing
+            } else if (hd == Mdefine_values_symbol) {
+                // define-values
+                e = Mlist3(Mdefine_values_symbol, Mcadr(e), expand_expr(Mcaddr(e)));
+            } else if (hd == Mdefine_symbol) {
+                // define
+                e = expand_define_expr(e);
+            } else {
+                e = expand_expr(e);
+            }
+        } else {
+            e = expand_expr(e);
+        }
+
+        Mcar(es) = e;
     }
 }

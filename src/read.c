@@ -250,10 +250,8 @@ loop:
         switch (c) {
         case '%':
             // symbol
-            c = '#';
-            i = 0;
+            i = 1;
             buffer[0] = '#';
-            buffer[1] = '%';
             goto read_symbol;
         case 't':
             // true

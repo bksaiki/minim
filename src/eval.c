@@ -343,17 +343,7 @@ static void check_let_arity(obj tc, obj ids, obj v) {
     }
 }
 
-static obj do_let(obj tc, obj v) {
-    obj k, env, binds, ids;
-
-    k = Mtc_cc(tc);
-    env = Mcontinuation_let_env(k);
-    binds = Mcontinuation_let_bindings(k);
-
-    // check that we have enough ids
-    ids = Mcaar(binds);
-    check_let_arity(tc, ids, v);
-
+static void do_binds(obj tc, obj env, obj ids, obj v) {
     // bind values
     if (Mvaluesp(v)) {
         v = values_to_list();
@@ -368,6 +358,21 @@ static obj do_let(obj tc, obj v) {
             Mclosure_name(v) = Mcar(ids);
         env_insert(env, Mcar(ids), v);
     }
+}
+
+static obj do_let(obj tc, obj v) {
+    obj k, env, binds, ids;
+
+    k = Mtc_cc(tc);
+    env = Mcontinuation_let_env(k);
+    binds = Mcontinuation_let_bindings(k);
+
+    // check that we have enough ids
+    ids = Mcaar(binds);
+    check_let_arity(tc, ids, v);
+
+    // bind values
+    do_binds(tc, env, ids, v);
 
     binds = Mcdr(binds);
     if (Mnullp(binds)) {
@@ -713,8 +718,84 @@ obj eval_expr(obj e) {
     return v;
 }
 
-obj eval_module(obj mod) {
-    obj tc, k, env, menv;
+static void do_import(obj tc, obj spec) {
+    obj c_kernel, kernel;
+
+    if (Mconsp(spec)) {
+        minim_error1("do_import()", "unimplemented", spec);
+    } else if (Msymbolp(spec)) {
+        c_kernel = Mintern("#%c-kernel");
+        kernel = Mintern("#%kernel");
+    
+        if (spec == c_kernel) {
+            import_env(tc, prim_env(empty_env()));
+        } else if (spec == kernel) {
+            minim_error1("do_import()", "unimplemented", spec);
+        } else {
+            minim_error1("do_import()", "unknown spec", spec);
+        }
+    } else {
+        minim_error1("do_import()", "unreachable", spec);
+    }
+}
+
+static void do_imports(obj tc, obj mod) {
+    obj es, e, hd, specs;
+
+    for (es = Mmodule_body(mod); !Mnullp(es); es = Mcdr(es)) {
+        e = Mcar(es);
+        if (Mconsp(e)) {
+            hd = Mcar(e);
+            if (hd == Mimport_symbol) {
+                // import
+                specs = Mcdr(e);
+                while (!Mnullp(specs)) {
+                    do_import(tc, Mcar(specs));
+                    specs = Mcdr(specs);
+                }
+            }
+        }
+    }
+}
+
+void do_module_body(obj mod) {
+    obj tc, k0, env, es, e, hd, x;
+
+    tc = Mcurr_tc();
+    k0 = Mtc_cc(tc);
+    env = Mtc_env(tc);
+
+    // evaluate the body
+    for (es = Mmodule_body(mod); !Mnullp(es); es = Mcdr(es)) {
+        e = Mcar(es);
+        if (Mconsp(e)) {
+            hd = Mcar(e);
+            if (hd == Mimport_symbol || hd == Mexport_symbol) {
+                // skip
+                continue;
+            } else if (hd == Mdefine_values_symbol) {
+                // define-values
+                x = eval_k(Mcaddr(e));
+                check_let_arity(tc, Mcadr(e), x);
+                do_binds(tc, env, Mcadr(e), x);
+            } else {
+                // expression
+                x = eval_k(Mcaddr(e));
+                minim_error1("do_module_body()", "unimplemented", x);
+            }
+        } else {
+            // expression
+            x = eval_k(e);
+            minim_error1("do_module_body()", "unimplemented", x);
+        }
+
+        Mtc_env(tc) = env;
+        Mtc_cc(tc) = k0;
+    }
+}
+
+void eval_module(obj mod) {
+    obj tc, k, env;
 
     // stash old continuation and environment
     tc = Mcurr_tc();
@@ -722,16 +803,19 @@ obj eval_module(obj mod) {
     env = Mtc_env(tc);
 
     // check module syntax
+    check_module(mod);
+    expand_module(mod);
+    writeln_object(stderr, Mmodule_body(mod));
 
+    // handle imports
+    do_imports(tc, mod);
 
     // evaluating the module with an empty environment
-    menv = empty_env();
-    Mtc_env(tc) = menv;
+    Mtc_env(tc) = empty_env();
     Mtc_cc(tc) = Mnull_continuation(Mtc_env(tc));
+    do_module_body(mod);
 
     // restore old continuation and environment
     Mtc_cc(tc) = k;
     Mtc_env(tc) = env;
-
-    return menv;
 }
