@@ -5,7 +5,7 @@
   (lambda (f xs)
     (if (null? xs)
         '()
-        (let loop ([xs xs] [ys ys])
+        (let loop ([xs xs] [ys '()])
           (if (null? xs)
               (reverse ys)
               (loop (cdr xs) (cons (f (car xs)) ys)))))))

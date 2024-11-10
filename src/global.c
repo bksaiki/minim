@@ -20,13 +20,15 @@ obj Mletrec_values_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
 
-obj Mimport_symbol;
-obj Mexport_symbol;
 obj Mdefine_symbol;
 obj Mdefine_values_symbol;
+obj Mexport_symbol;
+obj Mimport_symbol;
+obj Mkernel_symbol;
 
 intern_table *itab;
 obj *Mcurr_tc_box;
+obj Mkernel;
 
 void minim_init(void) {
     // special values
@@ -62,10 +64,11 @@ void minim_init(void) {
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
 
-    Mimport_symbol = Mintern("import");
-    Mexport_symbol = Mintern("export");
     Mdefine_symbol = Mintern("define");
     Mdefine_values_symbol = Mintern("define-values");
+    Mexport_symbol = Mintern("export");
+    Mimport_symbol = Mintern("import");
+    Mkernel_symbol = Mintern("#%kernel");
 
     // initialize thread context
     Mcurr_tc_box = GC_malloc_uncollectable(sizeof(obj));

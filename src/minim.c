@@ -14,12 +14,17 @@ int main(int argc, char **argv) {
     Mtc_env(tc) = prim_env(Mtc_env(tc));
 
     load_kernel();
+    module_import(Mkernel_symbol);
 
     while (1) {
         fputs("> ", stdout);
         fflush(stdout);
 
         e = read_object(Mtc_ip(tc));
+        if (Meofp(e)) {
+            break;
+        }
+
         v = eval_expr(e);
     
         write_obj(stdout, v);

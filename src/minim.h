@@ -63,10 +63,11 @@ extern obj Mletrec_values_symbol;
 extern obj Mquote_symbol;
 extern obj Msetb_symbol;
 
-extern obj Mimport_symbol;
-extern obj Mexport_symbol;
 extern obj Mdefine_symbol;
 extern obj Mdefine_values_symbol;
+extern obj Mexport_symbol;
+extern obj Mimport_symbol;
+extern obj Mkernel_symbol;
 
 // Object types
 
@@ -532,6 +533,11 @@ NORETURN void minim_error2(const char *name, const char *msg, obj x, obj y);
 NORETURN void minim_error3(const char *name, const char *msg, obj x, obj y, obj z);
 
 // Modules
+
+void module_import(obj spec);
+void module_export(obj mod, obj spec);
+
+extern obj Mkernel;
 
 void load_kernel(void);
 
