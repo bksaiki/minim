@@ -305,6 +305,20 @@ loop:
                 expand_expr(Mcaddr(e)),
                 expand_expr(Mcar(Mcdddr(e)))
             );
+        } else if (hd == Mwhen_symbol) {
+            return Mlist4(
+                Mif_symbol,
+                expand_expr(Mcadr(e)),
+                expand_expr(Mcaddr(e)),
+                Mlist2(Mquote_symbol, Mvoid)
+            );
+        } else if (hd == Munless_symbol) {
+            return Mlist4(
+                Mif_symbol,
+                expand_expr(Mcadr(e)),
+                Mlist2(Mquote_symbol, Mvoid),
+                expand_expr(Mcaddr(e))
+            );
         } else if (hd == Mlambda_symbol) {
             return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
         } else if (hd == Msetb_symbol) {

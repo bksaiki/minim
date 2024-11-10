@@ -32,6 +32,20 @@ static void check_1ary_syntax(obj e) {
 
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> <datum> <datum>)
+static void check_2ary_syntax(obj e) {
+    obj rib;
+    
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    rib = Mcdr(rib);
+    if (!Mconsp(rib) || !Mnullp(Mcdr(rib)))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr` must be `(<name> <datum> <datum> <datum>)
 static void check_3ary_syntax(obj e) {
     obj rib;
     
@@ -326,6 +340,14 @@ void check_expr(obj e) {
             check_expr(Mcadr(e));
             check_expr(Mcaddr(e));
             check_expr(Mcar(Mcdddr(e)));
+        } else if (hd == Mwhen_symbol) {
+            check_2ary_syntax(e);
+            check_expr(Mcadr(e));
+            check_expr(Mcaddr(e));
+        } else if (hd == Munless_symbol) {
+            check_2ary_syntax(e);
+            check_expr(Mcadr(e));
+            check_expr(Mcaddr(e));
         } else if (hd == Mlambda_symbol) {
             check_lambda(e);
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))

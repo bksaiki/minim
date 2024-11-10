@@ -68,6 +68,24 @@ int test_if(void) {
     return passed;
 }
 
+int test_when(void) {
+    passed = 1;
+
+    check_equal("(when #t 1)", "1");
+    check_equal("(when #f 1)", "#<void>");
+
+    return passed;
+}
+
+int test_unless(void) {
+    passed = 1;
+
+    check_equal("(unless #t 1)", "#<void>");
+    check_equal("(unless #f 1)", "1");
+
+    return passed;
+}
+
 int test_begin(void) {
     passed = 1;
 
@@ -189,6 +207,8 @@ int main(int argc, char **argv) {
 
     log_test("quote", test_quote, return_code);
     log_test("if", test_if, return_code);
+    log_test("when", test_when, return_code);
+    log_test("unless", test_unless, return_code);
     log_test("begin", test_begin, return_code);
     log_test("let-values", test_let_values, return_code);
     log_test("letrec-values", test_letrec_values, return_code);
