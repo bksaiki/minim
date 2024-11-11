@@ -82,8 +82,7 @@
 
 (export length
         reverse
-        append
-        map1)
+        append)
 
 (define (non-list-error name x)
   (raise-argument-error name "list?" x))
@@ -119,9 +118,45 @@
          [else (non-list-error 'append (car xss))]))]))
 
 (define (map1 f xs)
-  (if (null? xs)
-      '()
-      (let loop ([xs xs] [ys '()])
-        (if (null? xs)
-            (reverse ys)
-            (loop (cdr xs) (cons (f (car xs)) ys))))))
+  (cond
+    [(null? xs) '()]
+    [(null? (cdr xs)) (list (f (car xs)))]
+    [else
+     (let loop ([xs xs] [ys '()])
+       (if (null? xs)
+           (reverse ys)
+           (loop (cdr xs) (cons (f (car xs)) ys))))]))
+
+(define (foreach1 f xs)
+  (cond
+    [(null? xs) (void)]
+    [(null? (cdr xs))
+     (f (car xs))
+     (void)]
+    [else
+     (let loop ([xs xs])
+       (unless (null? xs)
+         (f (car xs))
+         (loop (cdr xs))))]))
+
+(define (andmap1 f xs)
+  (cond
+    [(null? xs) #t]
+    [(null? (cdr xs)) (if (f (car xs)) #t #f)]
+    [else 
+     (let loop ([xs xs])
+       (cond
+         [(null? xs) #t]
+         [(f (car xs)) (loop (cdr xs))]
+         [else #f]))]))
+
+(define (ormap1 f xs)
+  (cond
+    [(null? xs) #f]
+    [(null? (cdr xs)) (if (f (car xs)) #t #f)]
+    [else 
+     (let loop ([xs xs])
+       (cond
+         [(null? xs) #f]
+         [(f (car xs)) #t]
+         [else (loop (cdr xs))]))]))
