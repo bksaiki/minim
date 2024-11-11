@@ -12,6 +12,26 @@ static obj condense_body(obj es) {
     }
 }
 
+// (cond [<test> <expr>] <cls> ...)
+// =>
+// (if <test> <expr> (cond <cls> ...))
+// (cond [else <tail>])
+// =>
+// <tail>
+static obj expand_cond(obj e) {
+    obj cls, iff;
+
+    cls = Mcadr(e);
+    if (Mnullp(Mcddr(e)) && Mcar(cls) == Mintern("else")) {
+        // else clause
+        return Mcadr(cls);
+    } else {
+        // normal clause
+        iff = Mcons(Mcond_symbol, Mcddr(e));
+        return Mlist4(Mif_symbol, Mcar(cls), Mcadr(cls), iff);
+    }
+}
+
 // (let-values ([(id ...) <expr>] ...) <body> ...)
 // => (let-values ([(id ...) <expr>] ...) (begin <body>) 
 static obj expand_let_values_expr(obj e) {
@@ -319,6 +339,15 @@ loop:
                 Mlist2(Mquote_symbol, Mvoid),
                 expand_expr(Mcaddr(e))
             );
+        } else if (hd == Mcond_symbol) {
+            if (Mnullp(Mcdr(e))) {
+                // empty cond => void
+                return Mlist2(Mquote_symbol, Mvoid);
+            } else {
+                // reduce by 1 clause
+                e = expand_cond(e);
+                goto loop;
+            }
         } else if (hd == Mlambda_symbol) {
             return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
         } else if (hd == Msetb_symbol) {

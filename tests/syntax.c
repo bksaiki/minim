@@ -86,6 +86,22 @@ int test_unless(void) {
     return passed;
 }
 
+int test_cond(void) {
+    passed = 1;
+
+    check_equal("(cond)", "#<void>");
+    check_equal("(cond [#t 1])", "1");
+    check_equal("(cond [1 1])", "1");
+    check_equal("(cond [#t 1] [#f 0])", "1");
+    check_equal("(cond [#f 1] [#t 0])", "0");
+    check_equal("(cond [#f 1] [#f 0])", "#<void>");
+    check_equal("(cond [#f 1] [#f 2] [#t 3])", "3");
+    check_equal("(cond [#f 1] [else 2])", "2");
+    check_equal("(cond [#f 1] [#f 2] [else 3])", "3");
+
+    return passed;
+}
+
 int test_begin(void) {
     passed = 1;
 
@@ -209,6 +225,7 @@ int main(int argc, char **argv) {
     log_test("if", test_if, return_code);
     log_test("when", test_when, return_code);
     log_test("unless", test_unless, return_code);
+    log_test("cond", test_cond, return_code);
     log_test("begin", test_begin, return_code);
     log_test("let-values", test_let_values, return_code);
     log_test("letrec-values", test_letrec_values, return_code);

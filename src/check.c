@@ -64,6 +64,25 @@ static void check_3ary_syntax(obj e) {
 
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr must be `(<name> <symbol> <datum>)`
+static void check_cond(obj e) {
+    obj rib, cls, els;
+
+    els = Mintern("else");
+    for (rib = Mcdr(e); !Mnullp(rib); rib = Mcdr(rib)) {
+        cls = Mcar(rib);
+        if (!Mconsp(cls) || !Mconsp(Mcdr(cls)) || !Mnullp(Mcddr(cls)))
+            bad_syntax_exn(e);
+
+        if (Mcar(cls) == els && !Mnullp(Mcdr(rib)))
+            minim_error2("cond", "`else` clause must be last", e, cls);
+    }
+    
+    if (!Mnullp(rib))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
+// Check: `expr must be `(<name> <symbol> <datum>)`
 static void check_setb(obj e) {
     obj rib;
 
@@ -209,7 +228,7 @@ static void check_import_spec(obj e, obj spec) {
         if (hd == Mintern("prefix")) {
             // (prefix <spec> <identifier)
             rib = Mcdr(spec);
-            if (Mnullp(rib) || Mnullp(Mcdr(rib)) || !Mnullp(Mcddr(rib))) {
+            if (!Mconsp(rib) || !Mconsp(Mcdr(rib)) || !Mnullp(Mcddr(rib))) {
                 bad_syntax_exn(e);
             }
 
@@ -348,6 +367,12 @@ void check_expr(obj e) {
             check_2ary_syntax(e);
             check_expr(Mcadr(e));
             check_expr(Mcaddr(e));
+        } else if (hd == Mcond_symbol) {
+            check_cond(e);
+            for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it)) {
+                check_expr(Mcaar(it));
+                check_expr(Mcadar(it));
+            }
         } else if (hd == Mlambda_symbol) {
             check_lambda(e);
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))

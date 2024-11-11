@@ -54,6 +54,7 @@ typedef void        *obj;
 // Syntax
 
 extern obj Mbegin_symbol;
+extern obj Mcond_symbol;
 extern obj Mif_symbol;
 extern obj Mlambda_symbol;
 extern obj Mlet_symbol;
