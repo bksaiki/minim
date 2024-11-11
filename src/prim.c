@@ -9,6 +9,7 @@ obj charp_prim;
 obj stringp_prim;
 obj consp_prim;
 obj procp_prim;
+obj listp_prim;
 
 obj cons_prim;
 obj car_prim;
@@ -57,6 +58,8 @@ proc1(charp_proc, x, Mbool(Mcharp(x)))
 proc1(stringp_proc, x, Mbool(Mstringp(x)))
 proc1(consp_proc, x, Mbool(Mconsp(x)))
 proc1(procp_proc, x, Mbool(Mprocp(x)))
+proc1(listp_proc, x, Mbool(Mlistp(x)))
+
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
@@ -79,6 +82,7 @@ void init_prims(void) {
     stringp_prim = Mprim(stringp_proc, 1, "string?");
     consp_prim = Mprim(consp_proc, 1, "pair?");
     procp_prim = Mprim(procp_proc, 1, "procedure?");
+    listp_prim = Mprim(listp_proc, 1, "list?");
 
     cons_prim = Mprim(Mcons, 2, "cons");
     car_prim = Mprim(car_proc, 1, "car");
@@ -133,6 +137,7 @@ obj prim_env(obj env) {
     env_add_prim(env, stringp_prim);
     env_add_prim(env, consp_prim);
     env_add_prim(env, procp_prim);
+    env_add_prim(env, listp_prim);
 
     env_add_prim(env, car_prim);
     env_add_prim(env, cdr_prim);

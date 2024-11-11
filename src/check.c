@@ -70,7 +70,7 @@ static void check_cond(obj e) {
     els = Mintern("else");
     for (rib = Mcdr(e); !Mnullp(rib); rib = Mcdr(rib)) {
         cls = Mcar(rib);
-        if (!Mconsp(cls) || !Mconsp(Mcdr(cls)) || !Mnullp(Mcddr(cls)))
+        if (!Mconsp(cls) || !Mconsp(Mcdr(cls)) || !Mlistp(Mcddr(cls)))
             bad_syntax_exn(e);
 
         if (Mcar(cls) == els && !Mnullp(Mcdr(rib)))

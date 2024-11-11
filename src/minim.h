@@ -506,6 +506,7 @@ extern obj charp_prim;
 extern obj stringp_prim;
 extern obj consp_prim;
 extern obj procp_prim;
+extern obj listp_prim;
 
 extern obj cons_prim;
 extern obj car_prim;

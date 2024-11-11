@@ -23,7 +23,8 @@
         char?
         string?
         pair?
-        procedure?)
+        procedure?
+        list?)
 
 (define null? $null?)
 (define symbol? $symbol?)
@@ -32,28 +33,90 @@
 (define string? $string?)
 (define pair? $pair?)
 (define procedure? $procedure?)
+(define list? $list?)
 
 ;; constructors
 
 (export cons
-        list
-        void)
+        list)
 
 (define cons $cons)
 (define list $list)
+
+;; special
+
+(export apply
+        call/cc
+        call-with-current-continuation
+        call-with-values
+        dynamic-wind
+        values
+        void)
+
+(define apply $apply)
+(define call/cc $call/cc)
+(define call-with-current-continuation call/cc)
+(define call-with-values $call-with-values)
+(define dynamic-wind $dynamic-wind)
+(define values $values)
 (define void $void)
 
 ;; --------------------------------------------------------
 ;; Pairs
 
-; (define (car x)
-;   (if ()
-;    (raise-argument-error 'car "pair?" x)
-      
+(export car
+        cdr)
 
+(define (car x)
+  (unless (pair? x)
+    (raise-argument-error 'car "pair?" x))
+  ($car x))
+      
+(define (cdr x)
+  (unless (pair? x)
+    (raise-argument-error 'cdr "pair?" x))
+  ($cdr x))
 
 ;; --------------------------------------------------------
 ;; Lists
+
+(export length
+        reverse
+        append
+        map1)
+
+(define (non-list-error name x)
+  (raise-argument-error name "list?" x))
+
+(define (length x)
+  (unless (list? x)
+    (non-list-error 'length x))
+  ($length x))
+
+(define (reverse x)
+  (unless (list? x)
+    (non-list-error 'reverse x))
+  ($reverse x))
+
+(define (append . xss)
+  (cond
+    [(null? xss) '()]
+    [(null? (cdr xss))
+     (unless (list? (car xss))
+       (non-list-error 'append (car xss)))
+     (car xss)]
+    [(null? (cddr xss))
+     (unless (list? (car xss))
+       (non-list-error 'append (car xss)))
+     (unless (list? (cadr xss))
+       (non-list-error 'append (cadr xss)))
+     ($append (car xss) (cadr xss))]
+    [else
+     (let loop ([acc '()] [xss (reverse xss)])
+       (cond
+         [(null? xss) acc]
+         [(list? xss) (loop ($append (car xss) acc) (cdr xss))]
+         [else (non-list-error 'append (car xss))]))]))
 
 (define (map1 f xs)
   (if (null? xs)

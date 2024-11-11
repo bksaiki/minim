@@ -12,14 +12,14 @@ static obj condense_body(obj es) {
     }
 }
 
-// (cond [<test> <expr>] <cls> ...)
+// (cond [<test> <expr> ..+] <cls> ...)
 // =>
-// (if <test> <expr> (cond <cls> ...))
+// (if <test> (begin <expr> ..+) (cond <cls> ...))
 // (cond [else <tail>])
 // =>
 // <tail>
 static obj expand_cond(obj e) {
-    obj cls, iff;
+    obj cls, ift, iff;
 
     cls = Mcadr(e);
     if (Mnullp(Mcddr(e)) && Mcar(cls) == Mintern("else")) {
@@ -27,8 +27,9 @@ static obj expand_cond(obj e) {
         return Mcadr(cls);
     } else {
         // normal clause
+        ift = Mcons(Mbegin_symbol, Mcdr(cls));
         iff = Mcons(Mcond_symbol, Mcddr(e));
-        return Mlist4(Mif_symbol, Mcar(cls), Mcadr(cls), iff);
+        return Mlist4(Mif_symbol, Mcar(cls), ift, iff);
     }
 }
 
