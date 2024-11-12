@@ -476,9 +476,13 @@ size_t hash_bytes(const void *data, size_t len);
 void init_prims(void);
 obj prim_env(obj env);
 
-// Evaluation
+// Objects
 
+int Meqp(obj x, obj y);
+int Mequalp(obj x, obj y);
 int Mimmediatep(obj x);
+
+// Evaluation
 
 void check_expr(obj e);
 void check_module(obj mod);
@@ -537,8 +541,10 @@ extern obj fx_le_prim;
 extern obj fx_gt_prim;
 extern obj fx_lt_prim;
 
-extern obj not_prim;
+extern obj eq_prim;
+extern obj equal_prim;
 extern obj error_prim;
+extern obj not_prim;
 
 extern obj apply_prim;
 extern obj callcc_prim;

@@ -35,8 +35,10 @@ obj fx_le_prim;
 obj fx_gt_prim;
 obj fx_lt_prim;
 
-obj not_prim;
+obj eq_prim;
+obj equal_prim;
 obj error_prim;
+obj not_prim;
 
 obj apply_prim;
 obj callcc_prim;
@@ -52,6 +54,8 @@ obj void_prim;
     static obj name(void) { return (e); }
 #define proc1(name, x, e) \
     static obj name(obj x) { return (e); }
+#define proc2(name, x, y, e) \
+    static obj name(obj x, obj y) { return (e); }
 #define uncallable_proc(name) \
     static obj name(obj x) { minim_error("" #name "()", "should never call"); }
 
@@ -67,6 +71,9 @@ proc1(listp_proc, x, Mbool(Mlistp(x)))
 proc1(not_proc, x, Mnot(x));
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
+
+proc2(eq_proc, x, y, Mbool(Meqp(x, y)))
+proc2(equal_proc, x, y, Mbool(Mequalp(x, y)))
 
 uncallable_proc(apply_proc);
 uncallable_proc(callcc_proc);
@@ -112,8 +119,10 @@ void init_prims(void) {
     fx_gt_prim = Mprim(Mfx_gt, 2, "fx>");
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx<");
 
-    not_prim = Mprim(not_proc, 1, "not");
+    eq_prim = Mprim(eq_proc, 2, "eq?");
+    equal_prim = Mprim(equal_proc, 2, "equal?");
     error_prim = Mprim(Mkernel_error, 3, "error");
+    not_prim = Mprim(not_proc, 1, "not");
 
     apply_prim = Mprim(apply_proc, -3, "apply");
     Mprim_specialp(apply_prim) = 1;
@@ -171,8 +180,10 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
 
-    env_add_prim(env, not_prim);
+    env_add_prim(env, eq_prim);
+    env_add_prim(env, equal_prim);
     env_add_prim(env, error_prim);
+    env_add_prim(env, not_prim);
 
     env_add_prim(env, apply_prim);
     env_insert(env, Mintern("call/cc"), callcc_prim);

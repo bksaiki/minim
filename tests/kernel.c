@@ -51,7 +51,6 @@ void check_equal(const char *input, const char *expect) {
 #define check_false(input) \
     check_equal(input, "#f")
 
-
 int test_type(void) {
     passed = 1;
 
@@ -77,6 +76,77 @@ int test_type(void) {
     check_true ("(procedure? procedure?)");
     check_true ("(procedure? (lambda () 1))");
     check_false("(procedure? 1)");
+
+    return passed;
+}
+
+int test_eq(void) {
+    passed = 1;
+
+    check_true ("(eq? #t #t)");
+    check_true ("(eq? #f #f)");
+    check_false("(eq? #t #f)");
+
+    check_true ("(eq? 1 1)");
+    check_false("(eq? 1 2)");
+
+    // check_true ("(eq? #\\a #\\a)");
+    // check_false("(eq? #\\a #\\b)");
+
+    check_false("(eq? \"\" \"\")");
+    check_false("(eq? \"a\" \"a\")");
+
+    check_true ("(eq? '() '())");
+    check_false("(eq? '(1) '(1))");
+    check_false("(eq? '(1 . 2) '(1 . 2))");
+
+    // check_true ("(eq? #() #())");
+    // check_false("(eq? #(1) #(1))");
+
+    check_true ("(eq? car car)");
+    check_false("(eq? car cdr)");
+
+    check_true ("(let-values ([x '(a)]) (eq? x x))");
+    check_true ("(let-values ([f (lambda (x) x)]) (eq? f f))");
+
+    return passed;
+}
+
+int test_equal(void) {
+    passed = 1;
+
+    check_true ("(equal? #t #t)");
+    check_true ("(equal? #f #f)");
+    check_false("(equal? #t #f)");
+
+    check_true ("(equal? 1 1)");
+    check_false("(equal? 1 2)");
+
+    // check_true ("(equal? #\\a #\\a)");
+    // check_false("(equal? #\\a #\\b)");
+
+    check_true ("(equal? \"\" \"\")");
+    check_true ("(equal? \"a\" \"a\")");
+    check_false("(equal? \"a\" \"b\")");
+    check_true ("(equal? \"abc\" \"abc\")");
+
+    check_true ("(equal? '() '())");
+    check_true ("(equal? '(1) '(1))");
+    check_true ("(equal? '(1 . 2) '(1 . 2))");
+    check_false("(equal? '(1 . 2) '(1 . 3))");
+    check_true ("(equal? '(1 2 3) '(1 2 3))");
+
+    check_true ("(equal? car car)");
+    check_false("(equal? car cdr)");
+
+    // check_true("(equal? #() #())");
+    // check_true("(equal? #(1) #(1))");
+    // check_false("(equal? #(0) #(1))");
+    // check_true("(equal? #(1 2 3) #(1 2 3))");
+    // check_false("(equal? #(1 2) #(1 2 3))");
+
+    check_true ("(let-values ([x '(a)]) (equal? x x))");
+    check_true ("(let-values ([f (lambda (x) x)]) (equal? f f))");
 
     return passed;
 }
@@ -294,6 +364,8 @@ int main(int argc, char **argv) {
     load_kernel();  
 
     log_test("type", test_type, return_code);
+    log_test("eq", test_eq, return_code);
+    log_test("equal", test_equal, return_code);
     log_test("pair", test_pair, return_code);
     log_test("list", test_list, return_code);
     log_test("call-with-values", test_callwv, return_code);

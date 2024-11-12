@@ -24,7 +24,9 @@
         string?
         pair?
         procedure?
-        list?)
+        list?
+        eq?
+        equal?)
 
 (define null? $null?)
 (define symbol? $symbol?)
@@ -34,6 +36,9 @@
 (define pair? $pair?)
 (define procedure? $procedure?)
 (define list? $list?)
+
+(define eq? $eq?)
+(define equal? $equal?)
 
 ;; constructors
 
