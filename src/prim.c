@@ -34,6 +34,9 @@ obj fx_add_prim;
 obj fx_sub_prim;
 obj fx_mul_prim;
 obj fx_div_prim;
+obj fx_rem_prim;
+obj fx_mod_prim;
+
 obj fx_eq_prim;
 obj fx_ge_prim;
 obj fx_le_prim;
@@ -128,6 +131,9 @@ void init_prims(void) {
     fx_sub_prim = Mprim(Mfx_sub, 2, "fx-");
     fx_mul_prim = Mprim(Mfx_mul, 2, "fx*");
     fx_div_prim = Mprim(Mfx_div, 2, "fx/");
+    fx_rem_prim = Mprim(Mfx_remainder, 2, "fxremainder");
+    fx_mod_prim = Mprim(Mfx_modulo, 2, "fxmodulo");
+
     fx_eq_prim = Mprim(Mfx_eq, 2, "fx=");
     fx_ge_prim = Mprim(Mfx_ge, 2, "fx>=");
     fx_le_prim = Mprim(Mfx_le, 2, "fx<=");
@@ -194,6 +200,9 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_sub_prim);
     env_add_prim(env, fx_mul_prim);
     env_add_prim(env, fx_div_prim);
+    env_add_prim(env, fx_rem_prim);
+    env_add_prim(env, fx_mod_prim);
+
     env_add_prim(env, fx_eq_prim);
     env_add_prim(env, fx_ge_prim);
     env_add_prim(env, fx_le_prim);

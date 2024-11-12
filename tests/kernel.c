@@ -175,6 +175,16 @@ int test_num(void) {
     check_equal("(/ 7 3)", "2");
     check_equal("(/ 24 2 3)", "4");
 
+    check_equal("(remainder 3 2)", "1");
+    check_equal("(remainder -3 2)", "-1");
+    check_equal("(remainder 3 -2)", "1");
+    check_equal("(remainder -3 -2)", "-1");
+
+    check_equal("(modulo 3 2)", "1");
+    check_equal("(modulo -3 2)", "1");
+    check_equal("(modulo 3 -2)", "-1");
+    check_equal("(modulo -3 -2)", "-1");
+
     check_true("(= 1)");
     check_true ("(= 1 1)");
     check_false("(= 1 2)");

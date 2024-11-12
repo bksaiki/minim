@@ -428,6 +428,8 @@ obj Mfx_add(obj x, obj y);
 obj Mfx_sub(obj x, obj y);
 obj Mfx_mul(obj x, obj y);
 obj Mfx_div(obj x, obj y);
+obj Mfx_remainder(obj x, obj y);
+obj Mfx_modulo(obj x, obj y);
 
 obj Mfx_eq(obj x, obj y);
 obj Mfx_ge(obj x, obj y);
@@ -540,6 +542,9 @@ extern obj fx_add_prim;
 extern obj fx_sub_prim;
 extern obj fx_mul_prim;
 extern obj fx_div_prim;
+extern obj fx_rem_prim;
+extern obj fx_mod_prim;
+
 extern obj fx_eq_prim;
 extern obj fx_ge_prim;
 extern obj fx_le_prim;

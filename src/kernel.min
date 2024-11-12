@@ -556,6 +556,8 @@
         1+ 1-
         + - * /
         = > < >= <=
+        modulo
+        remainder
         negative-integer?
         positive-integer?
         non-negative-integer?
@@ -674,6 +676,20 @@
          [(not (number? (car xs))) (non-number-error '+ (car xs))]
          [(zero? (car xs)) (error '/' "division by zero" (car xs))]
          [else (loop ($fx/ x (car xs)) (cdr xs))]))]))
+
+(define (modulo x y)
+  (unless (integer? x)
+    (non-number-error 'modulo x))
+  (unless (integer? y)
+    (non-number-error 'modulo y'))
+  ($fxmodulo x y))
+
+(define (remainder x y)
+  (unless (integer? x)
+    (non-number-error 'remainder x))
+  (unless (integer? y)
+    (non-number-error 'remainder y'))
+  ($fxremainder x y))
 
 (define (make-comparator who cmp)
   (lambda (x . xs)

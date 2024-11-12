@@ -30,6 +30,23 @@ obj Mfx_div(obj x, obj y) {
     return Mfixnum(Mfixnum_value(x) / Mfixnum_value(y));
 }
 
+obj Mfx_remainder(obj x, obj y) {
+    // (-> integer integer integer)
+    return Mfixnum(Mfixnum_value(x) % Mfixnum_value(y));
+}
+
+obj Mfx_modulo(obj x, obj y) {
+    // (-> integer integer integer)
+    iptr xv, yv, z;
+
+    xv = Mfixnum_value(x);
+    yv = Mfixnum_value(y);
+    z = xv % yv;
+    if ((xv < 0) != (yv < 0))
+        z += yv;
+    return Mfixnum(z);
+}
+
 obj Mfx_eq(obj x, obj y) {
     return Mbool(Mfixnum_value(x) == Mfixnum_value(y));
 }
