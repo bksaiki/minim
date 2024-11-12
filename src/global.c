@@ -10,6 +10,7 @@ obj Meof;
 obj Mvalues;
 obj Munbound;
 
+obj Mand_symbol;
 obj Mbegin_symbol;
 obj Mcond_symbol;
 obj Mif_symbol;
@@ -18,6 +19,7 @@ obj Mlet_symbol;
 obj Mlet_values_symbol;
 obj Mletrec_symbol;
 obj Mletrec_values_symbol;
+obj Mor_symbol;
 obj Mquote_symbol;
 obj Msetb_symbol;
 obj Mwhen_symbol;
@@ -57,6 +59,7 @@ void minim_init(void) {
 
     // intern symbols
 
+    Mand_symbol = Mintern("and");
     Mbegin_symbol = Mintern("begin");
     Mcond_symbol = Mintern("cond");
     Mif_symbol = Mintern("if");
@@ -65,6 +68,7 @@ void minim_init(void) {
     Mlet_values_symbol = Mintern("let-values");
     Mletrec_symbol = Mintern("letrec");
     Mletrec_values_symbol = Mintern("letrec-values");
+    Mor_symbol = Mintern("or");
     Mquote_symbol = Mintern("quote");
     Msetb_symbol = Mintern("set!");
     Mwhen_symbol = Mintern("when");

@@ -35,6 +35,7 @@ obj fx_le_prim;
 obj fx_gt_prim;
 obj fx_lt_prim;
 
+obj not_prim;
 obj error_prim;
 
 obj apply_prim;
@@ -63,6 +64,7 @@ proc1(consp_proc, x, Mbool(Mconsp(x)))
 proc1(procp_proc, x, Mbool(Mprocp(x)))
 proc1(listp_proc, x, Mbool(Mlistp(x)))
 
+proc1(not_proc, x, Mnot(x));
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
 
@@ -110,7 +112,8 @@ void init_prims(void) {
     fx_gt_prim = Mprim(Mfx_gt, 2, "fx>");
     fx_lt_prim = Mprim(Mfx_lt, 2, "fx<");
 
-    error_prim = Mprim(error_prim, 3, "error");
+    not_prim = Mprim(not_proc, 1, "not");
+    error_prim = Mprim(Mkernel_error, 3, "error");
 
     apply_prim = Mprim(apply_proc, -3, "apply");
     Mprim_specialp(apply_prim) = 1;
@@ -168,6 +171,7 @@ obj prim_env(obj env) {
     env_add_prim(env, fx_gt_prim);
     env_add_prim(env, fx_lt_prim);
 
+    env_add_prim(env, not_prim);
     env_add_prim(env, error_prim);
 
     env_add_prim(env, apply_prim);

@@ -349,6 +349,30 @@ loop:
                 e = expand_cond(e);
                 goto loop;
             }
+        } else if (hd == Mand_symbol) {
+            if (Mnullp(Mcdr(e))) {
+                // (and) => #t
+                return Mtrue;
+            } else if (Mnullp(Mcddr(e))) {
+                // (and e) => e
+                return Mcadr(e);
+            } else {
+                // (and e es ...) => (if e (and es ...) #f)
+                e = Mlist4(Mif_symbol, Mcadr(e), Mcons(Mand_symbol, Mcddr(e)), Mfalse);
+                goto loop;
+            }
+        } else if (hd == Mor_symbol) {
+            if (Mnullp(Mcdr(e))) {
+                // (or) => #f
+                return Mfalse;
+            } else if (Mnullp(Mcddr(e))) {
+                // (or e) => e
+                return Mcadr(e);
+            } else {
+                // (or e es ...) => (if e #t (or es ...))
+                e = Mlist4(Mif_symbol, Mcadr(e), Mtrue, Mcons(Mor_symbol, Mcddr(e)));
+                goto loop;
+            }
         } else if (hd == Mlambda_symbol) {
             return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
         } else if (hd == Msetb_symbol) {

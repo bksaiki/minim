@@ -395,6 +395,14 @@ void check_expr(obj e) {
                 check_expr(Mcaar(it));
                 check_expr(Mcadar(it));
             }
+        } else if (hd == Mand_symbol) {
+            check_begin(e);
+            for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
+        } else if (hd == Mor_symbol) {
+            check_begin(e);
+            for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
         } else if (hd == Mlambda_symbol) {
             check_lambda(e);
             for (it = Mcddr(e); !Mnullp(it); it = Mcdr(it))

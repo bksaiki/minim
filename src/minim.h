@@ -53,6 +53,7 @@ typedef void        *obj;
 
 // Syntax
 
+extern obj Mand_symbol;
 extern obj Mbegin_symbol;
 extern obj Mcond_symbol;
 extern obj Mif_symbol;
@@ -61,6 +62,7 @@ extern obj Mlet_symbol;
 extern obj Mlet_values_symbol;
 extern obj Mletrec_symbol;
 extern obj Mletrec_values_symbol;
+extern obj Mor_symbol;
 extern obj Mquote_symbol;
 extern obj Msetb_symbol;
 extern obj Mwhen_symbol;
@@ -534,6 +536,9 @@ extern obj fx_ge_prim;
 extern obj fx_le_prim;
 extern obj fx_gt_prim;
 extern obj fx_lt_prim;
+
+extern obj not_prim;
+extern obj error_prim;
 
 extern obj apply_prim;
 extern obj callcc_prim;

@@ -37,8 +37,11 @@
 
 ;; constructors
 
-(export cons list)
+(export not
+        cons
+        list)
 
+(define not $not)
 (define cons $cons)
 (define list $list)
 
@@ -527,7 +530,8 @@
 
 (export length
         reverse
-        append)
+        append
+        map)
 
 (define (non-list-error name x)
   (raise-argument-error name "list?" x))
@@ -562,16 +566,6 @@
          [(list? xss) (loop ($append (car xss) acc) (cdr xss))]
          [else (non-list-error 'append (car xss))]))]))
 
-(define (map1 f xs)
-  (cond
-    [(null? xs) '()]
-    [(null? (cdr xs)) (list (f (car xs)))]
-    [else
-     (let loop ([xs xs] [ys '()])
-       (if (null? xs)
-           (reverse ys)
-           (loop (cdr xs) (cons (f (car xs)) ys))))]))
-
 (define (foreach1 f xs)
   (cond
     [(null? xs) (void)]
@@ -583,6 +577,16 @@
        (unless (null? xs)
          (f (car xs))
          (loop (cdr xs))))]))
+
+(define (map1 f xs)
+  (cond
+    [(null? xs) '()]
+    [(null? (cdr xs)) (list (f (car xs)))]
+    [else
+     (let loop ([xs xs] [ys '()])
+       (if (null? xs)
+           (reverse ys)
+           (loop (cdr xs) (cons (f (car xs)) ys))))]))
 
 (define (andmap1 f xs)
   (cond
@@ -606,6 +610,37 @@
          [(f (car xs)) #t]
          [else (loop (cdr xs))]))]))
 
-; (define (map f xs . xss)
-;   (if (null? xss)
-;       (
+(define (check-map-args! who f xss)
+  (unless (procedure? f)
+    (raise-argument-error who "procedure?" f))
+  (let loop ([xss xss] [len #f])
+    (unless (null? xss)
+      (let ([xs (car xss)])
+        (unless (list? xs)
+          (raise-argument-error who "list?" xs))
+        (let ([len* (length xs)])
+          (unless (or (not len) (= len len*))
+            (error who "list does have expected length" xs len))
+          (loop (cdr xss) len*))))))
+
+; (define (for-each f xs . xss)
+;   (let ([xss (cons xs xss)])
+;     (check-map-args! 'map f xss)
+;     (if (null? (cdr xss))
+;         (map1 f xs)
+;         (loop ([xss xss] [ys '()])
+;           (if (ormap1 null? xss)
+;               (reverse ys)
+;               (let ([y (apply f (map1 car xss))])
+;                 (loop (map1 cdr xss) (cons y ys))))))))
+
+(define (map f xs . xss)
+  (let ([xss (cons xs xss)])
+    (check-map-args! 'map f xss)
+    (if (null? (cdr xss))
+        (map1 f xs)
+        (loop ([xss xss] [ys '()])
+          (if (ormap1 null? xss)
+              (reverse ys)
+              (let ([y (apply f (map1 car xss))])
+                (loop (map1 cdr xss) (cons y ys))))))))

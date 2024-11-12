@@ -27,7 +27,7 @@ RM = rm -rf
 
 all: $(EXENAME)
 
-base: $(BUILD_DIR) $(CONFIG) gc
+base: $(CONFIG) gc
 
 clean:
 	$(RM) $(BUILD_DIR)
@@ -49,8 +49,8 @@ $(GC_DIR)/Makefile:
 $(BUILD_DIR)/libgc.a: $(GC_DIR)/Makefile
 	$(MAKE) -C $(GC_DIR)
 	cp $(GC_DIR)/.libs/libgc.a $(BUILD_DIR)/libgc.a
-
-$(CONFIG):
+ 
+$(CONFIG): $(BUILD_DIR)
 	echo "#define MINIM_X86_64 1" >> $@
 	echo "#define KERNEL_PATH \"$(realpath $(SRC_DIR))/kernel.min\"" >> $@
 
