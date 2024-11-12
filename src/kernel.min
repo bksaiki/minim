@@ -546,6 +546,104 @@
       (raise-argument-error 'set-cdr! "pair?" p)))
 
 ;; --------------------------------------------------------
+;; Numbers
+
+(export integer?
+        rational?
+        real?
+        complex?
+        number?
+        = > < >= <=
+        negative-integer?
+        positive-integer?
+        non-negative-integer?
+        negative?
+        positive?
+        non-negative?
+        zero?)
+
+(define integer? fixnum?)
+(define rational? integer?)
+(define real? rational?)
+(define complex? real?)
+
+(define number? complex?)
+
+(define (non-number-error name x)
+  (raise-argument-error name "number?" x))
+
+; (define (+ . xs)
+;   (cond
+;     [(null? xs) 0]
+;     [(null? (cdr xs))
+;      (unless (number? (car xs))
+;        (non-number-error '+ (car xs)))
+;      (car xs)]
+;     [(null? (cddr xs))
+;      (unless (number? (car xs))
+;        (non-number-error '+ (car xs)))
+;      (unless (number? (cadr xs))
+;        (non-number-error '+ (cadr xs)))
+;      ($fx+ (car xs) (cadr xs))]
+;     [else
+;      (unless (number? (car xs))
+;        (non-number-error '+ (car xs)))
+;      (let loop ([x (car xs)] [y (cadr xs)] [xs (cddr xs)])
+;        (
+;        (unless (number? (cadr xs))
+;        (non-number-error '+ (cadr xs)))
+     
+
+(define (make-comparator who cmp)
+  (lambda (x . xs)
+    (cond
+      [(null? xs)
+       (unless (number? x)
+         (non-number-error who x))
+       #t]
+      [(null? (cdr xs))
+       (unless (number? x)
+         (non-number-error who x))
+       (unless (number? (car xs))
+         (non-number-error who (car xs)))
+       (cmp x (car xs))]
+      [else 
+       (unless (number? x)
+         (non-number-error who x))
+       (loop ([x x] [y (car xs)] [xs (cdr xs)])
+         (cond
+           [(null? xs) (cmp x y)]
+           [(number? y) (and (cmp x y) (loop y (car xs) (cdr xs)))]
+           [else (non-number-error who y)]))])))
+
+(define = (make-comparator '= $fx=))
+(define > (make-comparator '> $fx>))
+(define < (make-comparator '< $fx<))
+(define >= (make-comparator '>= $fx>=))
+(define <= (make-comparator '>= $fx<=))
+
+(define (negative-integer? x)
+  (and (integer? x) (< x 0)))
+
+(define (non-negative-integer? x)
+  (and (integer? x) (>= x 0)))
+
+(define (positive-integer? x)
+  (and (integer? x) (>= x 0)))
+
+(define (negative? x)
+  (< x 0))
+
+(define (non-negative? x)
+  (>= x 0))
+
+(define (positive? x)
+  (>= x 0))
+
+(define (zero? x)
+  (= x 0))
+
+;; --------------------------------------------------------
 ;; Lists
 
 (export length
@@ -651,7 +749,7 @@
     (check-map-args! 'for-each f xss)
     (if (null? (cdr xss))
         (for-each1 f xs)
-        (loop ([xss xss])
+        (let loop ([xss xss])
           (unless (null? (car xss))
             (apply f (map1 car xss))
             (loop (map1 cdr xss)))))))
@@ -661,7 +759,7 @@
     (check-map-args! 'map f xss)
     (if (null? (cdr xss))
         (map1 f xs)
-        (loop ([xss xss] [ys '()])
+        (let loop ([xss xss] [ys '()])
           (if (null? (car xss))
               (reverse ys)
               (let ([y (apply f (map1 car xss))])
@@ -672,7 +770,7 @@
     (check-map-args! 'andmap f xss)
     (if (null? (cdr xss))
         (andmap1 f xs)
-        (loop ([xss xss])
+        (let loop ([xss xss])
           (cond
             [(null? (car xss)) #t]
             [(f (map1 car xss)) (loop (map1 cdr xss))]
@@ -683,7 +781,7 @@
     (check-map-args! 'ormap f xss)
     (if (null? (cdr xss))
         (ormap1 f xs)
-        (loop ([xss xss])
+        (let loop ([xss xss])
           (cond
             [(null? (car xss)) #f]
             [(f (map1 car xss)) #t]

@@ -151,6 +151,31 @@ int test_equal(void) {
     return passed;
 }
 
+int test_num(void) {
+    passed = 1;
+
+    check_true ("(= 1 1)");
+    check_false("(= 1 2)");
+
+    check_true ("(>= 2 1)");
+    check_true ("(>= 1 1)");
+    check_false("(>= 0 1)");
+
+    check_false("(<= 2 1)");
+    check_true ("(<= 1 1)");
+    check_true ("(<= 0 1)");
+
+    check_true ("(> 2 1)");
+    check_false("(> 1 1)");
+    check_false("(> 0 1)");
+
+    check_false("(< 2 1)");
+    check_false("(< 1 1)");
+    check_true ("(< 0 1)");
+
+    return passed;
+}
+
 int test_pair(void) {
     passed = 1;
 
@@ -366,6 +391,7 @@ int main(int argc, char **argv) {
     log_test("type", test_type, return_code);
     log_test("eq", test_eq, return_code);
     log_test("equal", test_equal, return_code);
+    log_test("num", test_num, return_code);
     log_test("pair", test_pair, return_code);
     log_test("list", test_list, return_code);
     log_test("call-with-values", test_callwv, return_code);
