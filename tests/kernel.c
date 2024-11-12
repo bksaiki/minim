@@ -154,21 +154,56 @@ int test_equal(void) {
 int test_num(void) {
     passed = 1;
 
+    check_equal("(+)", "0");
+    check_equal("(+ 1)", "1");
+    check_equal("(+ 1 2)", "3");
+    check_equal("(+ 1 2 3)", "6");
+    check_equal("(1+ 1)", "2");
+
+    check_equal("(- 1)", "-1");
+    check_equal("(- 1 2)", "-1");
+    check_equal("(- 1 2 3)", "-4");
+    check_equal("(1- 1)", "0");
+
+    check_equal("(*)", "1");
+    check_equal("(* 1)", "1");
+    check_equal("(* 1 2)", "2");
+    check_equal("(* 1 2 3)", "6");
+
+    check_equal("(/ 1 1)", "1");
+    check_equal("(/ 6 3)", "2");
+    check_equal("(/ 7 3)", "2");
+    check_equal("(/ 24 2 3)", "4");
+
+    check_true("(= 1)");
     check_true ("(= 1 1)");
     check_false("(= 1 2)");
+    check_true("(= 1 1 1)");
+    check_false("(= 1 2 1)");
+    check_false("(= 1 1 2)");
 
+    check_true("(>= 1)");
     check_true ("(>= 2 1)");
     check_true ("(>= 1 1)");
     check_false("(>= 0 1)");
+    check_true("(>= 2 1 1)");
+    check_false("(>= 1 2 1)");
+    check_false("(>= 1 1 2)");
 
+    check_true("(<= 1)");
     check_false("(<= 2 1)");
     check_true ("(<= 1 1)");
     check_true ("(<= 0 1)");
+    check_true("(<= 1 1 2)");
+    check_false("(<= 1 2 1)");
+    check_false("(<= 2 1 1)");
 
+    check_true("(> 1)");
     check_true ("(> 2 1)");
     check_false("(> 1 1)");
     check_false("(> 0 1)");
 
+    check_true("(< 1)");
     check_false("(< 2 1)");
     check_false("(< 1 1)");
     check_true ("(< 0 1)");
@@ -286,7 +321,7 @@ int test_callwv(void) {
     check_equal("(call-with-values (lambda () (values)) (lambda xs xs))", "()");
     check_equal("(call-with-values (lambda () (values 1)) (lambda xs xs))", "(1)");
     check_equal("(call-with-values (lambda () (values 1 2 3)) (lambda xs xs))", "(1 2 3)");
-    check_equal("(call-with-values (lambda () (values 1 2)) fx+)", "3");
+    check_equal("(call-with-values (lambda () (values 1 2)) +)", "3");
 
     return passed;
 }
@@ -299,17 +334,17 @@ int test_callcc(void) {
     check_equal("(let ([x #f]) (cons 1 (call/cc (lambda (k) (set! x k) 2))))", "(1 . 2)");
 
     // from ChezScheme documentation
-    check_equal("(call/cc (lambda (k) (fx* 5 (k 4))))", "4");
-    check_equal("(fx+ 2 (call/cc (lambda (k) (fx* 5 (k 4)))))", "6");
+    check_equal("(call/cc (lambda (k) (* 5 (k 4))))", "4");
+    check_equal("(+ 2 (call/cc (lambda (k) (* 5 (k 4)))))", "6");
     check_equal("(letrec ([product "
                   "(lambda (xs) "
                     "(call/cc "
                       "(lambda (break) "
                         "(if (null? xs) "
                             "1 "
-                            "(if (fx= (car xs) 0) "
+                            "(if (= (car xs) 0) "
                                 "(break 0) "
-                                "(fx* (car xs) (product (cdr xs))))))))]) "
+                                "(* (car xs) (product (cdr xs))))))))]) "
                   "(product '(7 3 8 0 1 9 5)))",
                 "0");
     check_equal("(let ([x (call/cc (lambda (k) k))]) "
@@ -317,8 +352,8 @@ int test_callcc(void) {
                 "\"hi\"");
     
     check_equal("(letrec ([k* #f] "
-                         "[y (fx1+ (call/cc (lambda (k) (set! k* k) 0)))]) "
-                  "(if (fx< y 5) "
+                         "[y (1+ (call/cc (lambda (k) (set! k* k) 0)))]) "
+                  "(if (< y 5) "
                       "(k* y) "
                       "y))",
                 "5");
@@ -344,7 +379,7 @@ int test_dynamic_wind(void) {
                           "(set! c c0) "
                           "'talk1)))) "
               "(lambda () (add 'disconnect))) "
-           "(if (fx< (length path) 4) "
+           "(if (< (length path) 4) "
                "(c 'talk2) "
                "(reverse path))))",
         "(connect talk1 disconnect connect talk2 disconnect)"

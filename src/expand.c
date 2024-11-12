@@ -24,7 +24,7 @@ static obj expand_cond(obj e) {
     cls = Mcadr(e);
     if (Mnullp(Mcddr(e)) && Mcar(cls) == Mintern("else")) {
         // else clause
-        return Mcadr(cls);
+        return Mcons(Mbegin_symbol, Mcdr(cls));
     } else {
         // normal clause
         ift = Mcons(Mbegin_symbol, Mcdr(cls));

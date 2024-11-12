@@ -553,6 +553,8 @@
         real?
         complex?
         number?
+        1+ 1-
+        + - * /
         = > < >= <=
         negative-integer?
         positive-integer?
@@ -572,27 +574,106 @@
 (define (non-number-error name x)
   (raise-argument-error name "number?" x))
 
-; (define (+ . xs)
-;   (cond
-;     [(null? xs) 0]
-;     [(null? (cdr xs))
-;      (unless (number? (car xs))
-;        (non-number-error '+ (car xs)))
-;      (car xs)]
-;     [(null? (cddr xs))
-;      (unless (number? (car xs))
-;        (non-number-error '+ (car xs)))
-;      (unless (number? (cadr xs))
-;        (non-number-error '+ (cadr xs)))
-;      ($fx+ (car xs) (cadr xs))]
-;     [else
-;      (unless (number? (car xs))
-;        (non-number-error '+ (car xs)))
-;      (let loop ([x (car xs)] [y (cadr xs)] [xs (cddr xs)])
-;        (
-;        (unless (number? (cadr xs))
-;        (non-number-error '+ (cadr xs)))
-     
+(define (1+ x)
+  (unless (number? x)
+    (non-number-error '1+ x))
+  ($fx1+ x))
+
+(define (1- x)
+  (unless (number? x)
+    (non-number-error '1- x))
+  ($fx1- x))
+
+(define (+ . xs)
+  (cond
+    [(null? xs) 0]
+    [(null? (cdr xs))
+     (unless (number? (car xs))
+       (non-number-error '+ (car xs)))
+     (car xs)]
+    [(null? (cddr xs))
+     (unless (number? (car xs))
+       (non-number-error '+ (car xs)))
+     (unless (number? (cadr xs))
+       (non-number-error '+ (cadr xs)))
+     ($fx+ (car xs) (cadr xs))]
+    [else
+     (unless (number? (car xs))
+       (non-number-error '+ (car xs)))
+     (let loop ([x (car xs)] [xs (cdr xs)])
+       (cond
+         [(null? xs) x]
+         [(number? (car xs)) (loop ($fx+ x (car xs)) (cdr xs))]
+         [else (non-number-error '+ (car xs))]))]))
+
+(define (- x . xs)
+  (cond
+    [(null? xs)
+     (unless (number? x)
+       (non-number-error '- x))
+     ($fxneg x)]
+    [(null? (cdr xs))
+     (unless (number? x)
+       (non-number-error '- x))
+     (unless (number? (car xs))
+       (non-number-error '+ (car xs)))
+     ($fx- x (car xs))]
+    [else
+     (unless (number? x)
+       (non-number-error '- x))
+     (let loop ([x x] [xs xs])
+       (cond
+         [(null? xs) x]
+         [(number? (car xs)) (loop ($fx- x (car xs)) (cdr xs))]
+         [else (non-number-error '+ (car xs))]))]))
+
+(define (* . xs)
+  (cond
+    [(null? xs) 1]
+    [(null? (cdr xs))
+     (unless (number? (car xs))
+       (non-number-error '* (car xs)))
+     (car xs)]
+    [(null? (cddr xs))
+     (unless (number? (car xs))
+       (non-number-error '* (car xs)))
+     (unless (number? (cadr xs))
+       (non-number-error '* (cadr xs)))
+     ($fx* (car xs) (cadr xs))]
+    [else
+     (unless (number? (car xs))
+       (non-number-error '* (car xs)))
+     (let loop ([x (car xs)] [xs (cdr xs)])
+       (cond
+         [(null? xs) x]
+         [(number? (car xs)) (loop ($fx* x (car xs)) (cdr xs))]
+         [else (non-number-error '* (car xs))]))]))
+
+(define (/ x . xs)
+  (cond
+    [(null? xs)
+     (unless (number? x)
+       (non-number-error '/ x))
+     (when (zero? x)
+       (error '/' "division by zero" x))
+     ($fx/ 1 x)]
+    [(null? (cdr xs))
+     (unless (number? x)
+       (non-number-error '- x))
+     (unless (number? (car xs))
+       (non-number-error '+ (car xs)))
+     (when (zero? (car xs))
+       (error '/' "division by zero" (car xs)))
+     ($fx/ x (car xs))]
+    [else
+     (unless (number? x)
+       (non-number-error '- x))
+     (let loop ([x x] [xs xs])
+       (cond
+         [(null? xs) x]
+         [(not (number? (car xs))) (non-number-error '+ (car xs))]
+         [(zero? (car xs)) (error '/' "division by zero" (car xs))]
+         [else (loop ($fx/ x (car xs)) (cdr xs))]))]))
 
 (define (make-comparator who cmp)
   (lambda (x . xs)
@@ -610,11 +691,12 @@
       [else 
        (unless (number? x)
          (non-number-error who x))
-       (loop ([x x] [y (car xs)] [xs (cdr xs)])
+       (let loop ([x x] [xs xs])
          (cond
-           [(null? xs) (cmp x y)]
-           [(number? y) (and (cmp x y) (loop y (car xs) (cdr xs)))]
-           [else (non-number-error who y)]))])))
+           [(null? xs) #t]
+           [(not (number? (car xs))) (non-number-error who (car xs))]
+           [(cmp x (car xs)) (loop (car xs) (cdr xs))]
+           [else #f]))])))
 
 (define = (make-comparator '= $fx=))
 (define > (make-comparator '> $fx>))
