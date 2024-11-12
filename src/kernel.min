@@ -18,6 +18,10 @@
 ;; type predicates
 
 (export null?
+        true?
+        false?
+        void?
+        eof?
         symbol?
         fixnum?
         char?
@@ -25,10 +29,13 @@
         pair?
         procedure?
         list?
-        eq?
-        equal?)
+        boolean?)
 
 (define null? $null?)
+(define true? $true?)
+(define false? $false?)
+(define void? $void?)
+(define eof? $eof?)
 (define symbol? $symbol?)
 (define fixnum? $fixnum?)
 (define char? $char?)
@@ -36,6 +43,13 @@
 (define pair? $pair?)
 (define procedure? $procedure?)
 (define list? $list?)
+
+(define (boolean? x)
+  (or (true? x) (false? x)))
+
+;; equality
+
+(export eq? equal?)
 
 (define eq? $eq?)
 (define equal? $equal?)

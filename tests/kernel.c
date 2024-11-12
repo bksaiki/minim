@@ -61,8 +61,8 @@ int test_type(void) {
     check_true ("(symbol? 'a)");
     check_false("(symbol? 1)");
 
-    check_true ("(integer? 1)");
-    check_false("(integer? 'a)");
+    check_true ("(fixnum? 1)");
+    check_false("(fixnum? 'a)");
 
     // check_true ("(char? #\\a)");
     // check_false("(char? 1)");
@@ -106,8 +106,8 @@ int test_eq(void) {
     check_true ("(eq? car car)");
     check_false("(eq? car cdr)");
 
-    check_true ("(let-values ([x '(a)]) (eq? x x))");
-    check_true ("(let-values ([f (lambda (x) x)]) (eq? f f))");
+    check_true ("(let ([x '(a)]) (eq? x x))");
+    check_true ("(let ([f (lambda (x) x)]) (eq? f f))");
 
     return passed;
 }
@@ -145,8 +145,8 @@ int test_equal(void) {
     // check_true("(equal? #(1 2 3) #(1 2 3))");
     // check_false("(equal? #(1 2) #(1 2 3))");
 
-    check_true ("(let-values ([x '(a)]) (equal? x x))");
-    check_true ("(let-values ([f (lambda (x) x)]) (equal? f f))");
+    check_true ("(let ([x '(a)]) (equal? x x))");
+    check_true ("(let ([f (lambda (x) x)]) (equal? f f))");
 
     return passed;
 }

@@ -509,6 +509,11 @@ void write_obj(FILE *out, obj o);
 // Prims
 
 extern obj nullp_prim;
+extern obj truep_prim;
+extern obj falsep_prim;
+extern obj voidp_prim;
+extern obj eofp_prim;
+
 extern obj symbolp_prim;
 extern obj fixnump_prim;
 extern obj charp_prim;

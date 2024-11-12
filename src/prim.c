@@ -3,6 +3,11 @@
 #include "minim.h"
 
 obj nullp_prim;
+obj truep_prim;
+obj falsep_prim;
+obj voidp_prim;
+obj eofp_prim;
+
 obj symbolp_prim;
 obj fixnump_prim;
 obj charp_prim;
@@ -60,6 +65,11 @@ obj void_prim;
     static obj name(obj x) { minim_error("" #name "()", "should never call"); }
 
 proc1(nullp_proc, x, Mbool(Mnullp(x)))
+proc1(truep_proc, x, Mbool(Mtruep(x)))
+proc1(falsep_proc, x, Mbool(Mfalsep(x)))
+proc1(voidp_proc, x, Mbool(Mvoidp(x)))
+proc1(eofp_proc, x, Mbool(Meofp(x)))
+
 proc1(symbolp_proc, x, Mbool(Msymbolp(x)))
 proc1(fixnump_proc, x, Mbool(Mfixnump(x)))
 proc1(charp_proc, x, Mbool(Mcharp(x)))
@@ -88,6 +98,11 @@ uncallable_proc(void_proc);
 
 void init_prims(void) {
     nullp_prim = Mprim(nullp_proc, 1, "null?");
+    truep_prim = Mprim(truep_proc, 1, "true?");
+    falsep_prim = Mprim(falsep_proc, 1, "false?");
+    voidp_prim = Mprim(voidp_proc, 1, "void?");
+    eofp_prim = Mprim(eofp_proc, 1, "eof?");
+
     symbolp_prim = Mprim(symbolp_proc, 1, "symbol?");
     fixnump_prim = Mprim(fixnump_proc, 1, "fixnum?");
     charp_prim = Mprim(charp_proc, 1, "char?");
@@ -149,6 +164,11 @@ obj prim_env(obj env) {
     env = env_extend(env);
 
     env_add_prim(env, nullp_prim);
+    env_add_prim(env, truep_prim);
+    env_add_prim(env, falsep_prim);
+    env_add_prim(env, voidp_prim);
+    env_add_prim(env, eofp_prim);
+
     env_add_prim(env, symbolp_prim);
     env_add_prim(env, fixnump_prim);
     env_add_prim(env, charp_prim);
