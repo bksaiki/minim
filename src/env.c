@@ -25,8 +25,8 @@ void env_insert(obj env, obj k, obj v) {
     Mcar(env) = Mcons(Mcons(k, v), Mcar(env));
 }
 
-void import_env(obj dst, obj src) {
-    return import_env_prefix(dst, src, Mfalse);
+void env_import(obj dst, obj src) {
+    return env_import_prefix(dst, src, Mfalse);
 }
 
 static obj symbol_append(obj s1, obj s2) {
@@ -40,7 +40,7 @@ static obj symbol_append(obj s1, obj s2) {
     return Mintern(s);
 }
 
-void import_env_prefix(obj dst, obj src, obj prefix) {
+void env_import_prefix(obj dst, obj src, obj prefix) {
     obj r, key, cell;
 
     for (; !Mnullp(src); src = Mcdr(src)) {

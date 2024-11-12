@@ -415,8 +415,8 @@ obj empty_env(void);
 obj env_extend(obj env);
 obj env_find(obj env, obj k);
 void env_insert(obj env, obj k, obj v);
-void import_env(obj dst, obj src);
-void import_env_prefix(obj dst, obj src, obj prefix);
+void env_import(obj dst, obj src);
+void env_import_prefix(obj dst, obj src, obj prefix);
 
 // Fixnums
 

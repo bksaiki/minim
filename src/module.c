@@ -42,9 +42,9 @@ loop:
         if (spec == Mintern("#%c-kernel")) {
             prims = prim_env(empty_env());
             if (Mfalsep(prefix)) {
-                import_env(Mtc_env(tc), prims);
+                env_import(Mtc_env(tc), prims);
             } else {
-                import_env_prefix(Mtc_env(tc), prims, prefix);
+                env_import_prefix(Mtc_env(tc), prims, prefix);
             }
         } else if (spec == Mkernel_symbol) {
             if (Mkernel == NULL) {
@@ -52,9 +52,9 @@ loop:
             }
 
             if (Mfalsep(prefix)) {
-                import_env(Mtc_env(tc), Mmodule_env(Mkernel));
+                env_import(Mtc_env(tc), Mmodule_env(Mkernel));
             } else {
-                import_env_prefix(Mtc_env(tc), Mmodule_env(Mkernel), prefix);
+                env_import_prefix(Mtc_env(tc), Mmodule_env(Mkernel), prefix);
             }
         } else {
             minim_error1("import", "cannot find library", spec);

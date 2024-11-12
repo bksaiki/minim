@@ -513,7 +513,8 @@
 ;; --------------------------------------------------------
 ;; Pair setters
 
-(export set-car! set-cdr!)
+(export set-car!
+        set-cdr!)
 
 (define (set-car! p x)
   (if (pair? p)
