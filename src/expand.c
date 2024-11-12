@@ -330,7 +330,7 @@ loop:
             return Mlist4(
                 Mif_symbol,
                 expand_expr(Mcadr(e)),
-                expand_expr(Mcaddr(e)),
+                expand_expr(Mcons(Mbegin_symbol, Mcddr(e))),
                 Mlist2(Mquote_symbol, Mvoid)
             );
         } else if (hd == Munless_symbol) {
@@ -338,7 +338,7 @@ loop:
                 Mif_symbol,
                 expand_expr(Mcadr(e)),
                 Mlist2(Mquote_symbol, Mvoid),
-                expand_expr(Mcaddr(e))
+                expand_expr(Mcons(Mbegin_symbol, Mcddr(e)))
             );
         } else if (hd == Mcond_symbol) {
             if (Mnullp(Mcdr(e))) {

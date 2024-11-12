@@ -65,17 +65,448 @@
 ;; Pairs
 
 (export car
-        cdr)
+        cdr
+        caar
+        cadr
+        cdar
+        cddr
+        caaar
+        caadr
+        cadar
+        caddr
+        cdaar
+        cdadr
+        cddar
+        cdddr
+        caaaar
+        caaadr
+        caadar
+        caaddr
+        cadaar
+        cadadr
+        caddar
+        cadddr
+        cdaaar
+        cdaadr
+        cdadar
+        cdaddr
+        cddaar
+        cddadr
+        cdddar
+        cddddr)
 
 (define (car x)
   (unless (pair? x)
     (raise-argument-error 'car "pair?" x))
   ($car x))
-      
+
 (define (cdr x)
   (unless (pair? x)
     (raise-argument-error 'cdr "pair?" x))
   ($cdr x))
+
+(define ((make-pair-argument-error who why) what)
+  (raise-argument-error who why what))
+
+(define caar
+  (let ([oops! (make-pair-argument-error 'caar "(pairof pair? any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                ($car t)
+                (oops! x)))
+          (oops! x)))))
+
+(define cadr
+  (let ([oops! (make-pair-argument-error 'cadr "(pairof any pair?)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                ($car t)
+                (oops! x)))
+          (oops! x)))))
+
+(define cdar
+  (let ([oops! (make-pair-argument-error 'cdar "(pairof pair? any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                ($cdr t)
+                (oops! x)))
+          (oops! x)))))
+
+(define cddr
+  (let ([oops! (make-pair-argument-error 'cddr "(pairof any pair?)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                ($cdr t)
+                (oops! x)))
+          (oops! x)))))
+
+(define caaar
+  (let ([oops! (make-pair-argument-error 'caaar "(pairof (pairof pair? any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      ($car t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caadr
+  (let ([oops! (make-pair-argument-error 'caadr "(pairof any (pairof pair? any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      ($car t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cadar
+  (let ([oops! (make-pair-argument-error 'cadar "(pairof (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      ($car t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caddr
+  (let ([oops! (make-pair-argument-error 'caddr "(pairof (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      ($car t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdaar
+  (let ([oops! (make-pair-argument-error 'cdaar "(pairof (pairof pair? any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      ($cdr t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdadr
+  (let ([oops! (make-pair-argument-error 'cdadr "(pairof any (pairof pair? any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      ($cdr t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cddar
+  (let ([oops! (make-pair-argument-error 'cddar "(pairof (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      ($cdr t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdddr
+  (let ([oops! (make-pair-argument-error 'cdddr "(pairof (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      ($cdr t)
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caaaar
+  (let ([oops! (make-pair-argument-error 'caaaar "(pairof (pairof (pairof pair? any) any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caaadr
+  (let ([oops! (make-pair-argument-error 'caaadr "(pairof any (pairof (pairof pair? any) any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caadar
+  (let ([oops! (make-pair-argument-error 'caadar "(pairof (pairof any (pairof pair? any)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caaddr
+  (let ([oops! (make-pair-argument-error 'caaddr "(pairof (pairof any (pairof pair? any)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cadaar
+  (let ([oops! (make-pair-argument-error 'cadaar "(pairof (pairof (pairof any pair?) any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cadadr
+  (let ([oops! (make-pair-argument-error 'cadadr "(pairof any (pairof (pairof any pair?) any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define caddar
+  (let ([oops! (make-pair-argument-error 'caddar "(pairof (pairof any (pairof any pair?)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cadddr
+  (let ([oops! (make-pair-argument-error 'cadddr "(pairof (pairof any (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($car t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdaaar
+  (let ([oops! (make-pair-argument-error 'cdaaar "(pairof (pairof (pairof pair? any) any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdaadr
+  (let ([oops! (make-pair-argument-error 'cdaadr "(pairof any (pairof (pairof pair? any) any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdadar
+  (let ([oops! (make-pair-argument-error 'cdadar "(pairof (pairof any (pairof pair? any)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdaddr
+  (let ([oops! (make-pair-argument-error 'cdaddr "(pairof (pairof any (pairof pair? any)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($car t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cddaar
+  (let ([oops! (make-pair-argument-error 'cddaar "(pairof (pairof (pairof any pair?) any) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cddadr
+  (let ([oops! (make-pair-argument-error 'cddadr "(pairof any (pairof (pairof any pair?) any))")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($car t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cdddar
+  (let ([oops! (make-pair-argument-error 'cdddar "(pairof (pairof any (pairof any pair?)) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($car x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
+
+(define cddddr
+  (let ([oops! (make-pair-argument-error 'cddddr "(pairof (pairof any (pairof any pair?) any)")])
+    (lambda (x)
+      (if (pair? x)
+          (let ([t ($cdr x)])
+            (if (pair? t)
+                (let ([t ($cdr t)])
+                  (if (pair? t)
+                      (let ([t ($cdr t)])
+                        (if (pair? t)
+                            ($cdr t)
+                            (oops! x)))
+                      (oops! x)))
+                (oops! x)))
+          (oops! x)))))
 
 ;; --------------------------------------------------------
 ;; Lists

@@ -32,20 +32,6 @@ static void check_1ary_syntax(obj e) {
 
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> <datum> <datum>)
-static void check_2ary_syntax(obj e) {
-    obj rib;
-    
-    rib = Mcdr(e);
-    if (!Mconsp(rib))
-        bad_syntax_exn(e);
-
-    rib = Mcdr(rib);
-    if (!Mconsp(rib) || !Mnullp(Mcdr(rib)))
-        bad_syntax_exn(e);
-}
-
-// Already assumes `expr` is `(<name> . <???>)`
-// Check: `expr` must be `(<name> <datum> <datum> <datum>)
 static void check_3ary_syntax(obj e) {
     obj rib;
     
@@ -63,7 +49,26 @@ static void check_3ary_syntax(obj e) {
 }
 
 // Already assumes `expr` is `(<name> . <???>)`
-// Check: `expr must be `(<name> <symbol> <datum>)`
+static void check_when(obj e) {
+    obj rib;
+    
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    rib = Mcdr(rib);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    rib = Mcdr(rib);
+    while (Mconsp(rib))
+        rib = Mcdr(rib);
+    
+    if (!Mnullp(rib))
+        bad_syntax_exn(e);
+}
+
+// Already assumes `expr` is `(<name> . <???>)`
 static void check_cond(obj e) {
     obj rib, cls, els;
 
@@ -279,7 +284,24 @@ static void check_export(obj e) {
 // Already assumes `expr` is `(<name> . <???>)`
 // Check: `expr` must be `(<name> <datum> ...)`
 static void check_define_values(obj e) {
-    minim_error1("check_define_values()", "unimplemented", e);
+    obj rib, ids;
+
+    rib = Mcdr(e);
+    if (!Mconsp(rib))
+        bad_syntax_exn(e);
+
+    ids = Mcar(rib);
+    while (Mconsp(ids)) {
+        assert_identifier(e, Mcar(ids));
+        ids = Mcdr(ids);
+    }
+
+    if (!Mnullp(ids))
+        bad_syntax_exn(e);
+
+    rib = Mcdr(rib);
+    if (!Mconsp(rib) && !Mnullp(Mcdr(rib)))
+        bad_syntax_exn(e);
 }
 
 // static void check_define_
@@ -360,13 +382,13 @@ void check_expr(obj e) {
             check_expr(Mcaddr(e));
             check_expr(Mcar(Mcdddr(e)));
         } else if (hd == Mwhen_symbol) {
-            check_2ary_syntax(e);
-            check_expr(Mcadr(e));
-            check_expr(Mcaddr(e));
+            check_when(e);
+            for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
         } else if (hd == Munless_symbol) {
-            check_2ary_syntax(e);
-            check_expr(Mcadr(e));
-            check_expr(Mcaddr(e));
+            check_when(e);
+            for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it))
+                check_expr(Mcar(it));
         } else if (hd == Mcond_symbol) {
             check_cond(e);
             for (it = Mcdr(e); !Mnullp(it); it = Mcdr(it)) {
