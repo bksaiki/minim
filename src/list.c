@@ -2,6 +2,16 @@
 
 #include "minim.h"
 
+obj Mset_car(obj x, obj y) {
+    Mcar(x) = y;
+    return Mvoid;
+}
+
+obj Mset_cdr(obj x, obj y) {
+    Mcdr(x) = y;
+    return Mvoid;
+}
+
 int Mlistp(obj x) {
     for (; Mconsp(x); x = Mcdr(x));
     return Mnullp(x);

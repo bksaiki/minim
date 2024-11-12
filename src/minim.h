@@ -435,6 +435,9 @@ obj Mfx_lt(obj x, obj y);
 
 // List
 
+obj Mset_car(obj x, obj y);
+obj Mset_cdr(obj x, obj y);
+
 int Mlistp(obj x);
 iptr list_length(obj x);
 obj Mlength(obj x);
@@ -511,6 +514,9 @@ extern obj listp_prim;
 extern obj cons_prim;
 extern obj car_prim;
 extern obj cdr_prim;
+extern obj set_car_prim;
+extern obj set_cdr_prim;
+
 extern obj list_prim;
 extern obj length_prim;
 extern obj reverse_prim;

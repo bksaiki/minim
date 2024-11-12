@@ -37,8 +37,7 @@
 
 ;; constructors
 
-(export cons
-        list)
+(export cons list)
 
 (define cons $cons)
 (define list $list)
@@ -62,7 +61,7 @@
 (define void $void)
 
 ;; --------------------------------------------------------
-;; Pairs
+;; Pair accessors
 
 (export car
         cdr
@@ -509,6 +508,21 @@
           (oops! x)))))
 
 ;; --------------------------------------------------------
+;; Pair setters
+
+(export set-car! set-cdr!)
+
+(define (set-car! p x)
+  (if (pair? p)
+      ($set-car! p x)
+      (raise-argument-error 'set-car! "pair?" p)))
+
+(define (set-cdr! p x)
+  (if (pair? p)
+      ($set-cdr! p x)
+      (raise-argument-error 'set-cdr! "pair?" p)))
+
+;; --------------------------------------------------------
 ;; Lists
 
 (export length
@@ -591,3 +605,7 @@
          [(null? xs) #f]
          [(f (car xs)) #t]
          [else (loop (cdr xs))]))]))
+
+; (define (map f xs . xss)
+;   (if (null? xss)
+;       (
