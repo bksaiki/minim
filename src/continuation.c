@@ -16,93 +16,95 @@ void continuation_set_immutable(obj k) {
 // If the continuation chain is immutable, a copy is made.
 // Otherwise, the argument is returned.
 obj continuation_mutable(obj k) {
-    if (Mcontinuation_immutablep(k)) {
-        // immutable => need to make a copy
-        obj k2;
+    obj k2;
 
-        switch (Mcontinuation_type(k)) {
-        // bottom of continuation chain (immutable, by default)
-        case NULL_CONT_TYPE:
-            k2 = k;
-            break;
-
-        // application
-        case APP_CONT_TYPE:
-            k2 = Mapp_continuation(Mcontinuation_prev(k), Mcontinuation_env(k), NULL);
-            Mcontinuation_app_hd(k2) = Mcontinuation_app_hd(k);
-            Mcontinuation_app_tl(k2) = Mcontinuation_app_tl(k);
-            break;
-
-        // if expressions
-        case COND_CONT_TYPE:
-            k2 = Mcond_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_cond_ift(k),
-                Mcontinuation_cond_iff(k)
-            );
-            break;
-
-        // begin expressions
-        case SEQ_CONT_TYPE:
-            k2 = Mseq_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_seq_value(k)
-            );
-            break;
-
-        // let expressions
-        case LET_CONT_TYPE:
-            k2 = Mlet_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_let_bindings(k),
-                Mcontinuation_let_body(k)
-            );
-            Mcontinuation_let_env(k2) = Mcontinuation_let_env(k);
-            break;
-
-        // set! expressions
-        case SETB_CONT_TYPE:
-            k2 = Msetb_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_setb_name(k)
-            );
-            break;
-
-        // call/cc expressions
-        case CALLCC_CONT_TYPE:
-            k2 = Mcallcc_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_callcc_winders(k)
-            );
-            break;
-
-        // dynamic-wind expressions
-        case DYNWIND_CONT_TYPE:
-            k2 = Mdynwind_continuation(
-                Mcontinuation_prev(k),
-                Mcontinuation_env(k),
-                Mcontinuation_dynwind_pre(k),
-                Mcontinuation_dynwind_val(k),
-                Mcontinuation_dynwind_post(k)    
-            );
-            Mcontinuation_dynwind_pre(k2) = Mcontinuation_dynwind_pre(k);
-            Mcontinuation_dynwind_state(k2) = Mcontinuation_dynwind_state(k);
-            break;
-
-        default:
-            minim_error1("continuation_pop", "unimplemented", Mfixnum(Mcontinuation_type(k)));
-        }
-
-        return k2;
-    } else {
-        // mutable => return it
+    // check if it is already mutable, this implies ownership
+    if (!Mcontinuation_immutablep(k)) {
         return k;
     }
+
+    switch (Mcontinuation_type(k)) {
+    // bottom of continuation chain (immutable, by default)
+    case NULL_CONT_TYPE:
+        k2 = k;
+        break;
+
+    // application
+    case APP_CONT_TYPE:
+        k2 = Mapp_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_app_it(k),
+            Mcontinuation_app_idx(k)
+        );
+        break;
+
+    // if expressions
+    case COND_CONT_TYPE:
+        k2 = Mcond_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_cond_ift(k),
+            Mcontinuation_cond_iff(k)
+        );
+        break;
+
+    // begin expressions
+    case SEQ_CONT_TYPE:
+        k2 = Mseq_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_seq_value(k)
+        );
+        break;
+
+    // let expressions
+    case LET_CONT_TYPE:
+        k2 = Mlet_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_let_bindings(k),
+            Mcontinuation_let_body(k)
+        );
+        Mcontinuation_let_env(k2) = Mcontinuation_let_env(k);
+        break;
+
+    // set! expressions
+    case SETB_CONT_TYPE:
+        k2 = Msetb_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_setb_name(k)
+        );
+        break;
+
+    // call/cc expressions
+    case CALLCC_CONT_TYPE:
+        k2 = Mcallcc_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_callcc_winders(k)
+        );
+        break;
+
+    // dynamic-wind expressions
+    case DYNWIND_CONT_TYPE:
+        k2 = Mdynwind_continuation(
+            Mcontinuation_prev(k),
+            Mcontinuation_env(k),
+            Mcontinuation_dynwind_pre(k),
+            Mcontinuation_dynwind_val(k),
+            Mcontinuation_dynwind_post(k)    
+        );
+        Mcontinuation_dynwind_pre(k2) = Mcontinuation_dynwind_pre(k);
+        Mcontinuation_dynwind_state(k2) = Mcontinuation_dynwind_state(k);
+        break;
+
+    default:
+        minim_error1("continuation_pop", "unimplemented", Mfixnum(Mcontinuation_type(k)));
+    }
+
+    return k2;
 }
 
 // Extracts the common tail of two winder lists
@@ -189,10 +191,9 @@ void print_continuation(obj cc) {
 
     // application
     case APP_CONT_TYPE:
-        fprintf(stderr, " hd: ");
-        writeln_object(stderr, Mcontinuation_app_hd(cc));
-        fprintf(stderr, " tl: ");
-        writeln_object(stderr, Mcontinuation_app_tl(cc));
+        fprintf(stderr, " args: ");
+        writeln_object(stderr, Mcontinuation_app_it(cc));
+        fprintf(stderr, " idx: %lu", Mcontinuation_app_idx(cc));
         break;
 
     // if expressions

@@ -31,8 +31,9 @@ typedef void        *obj;
 
 // system constants
 
-#define SYMBOL_MAX_LENGTH       4096
-#define INIT_VALUES_BUFFER_LEN  10
+#define SYMBOL_MAX_LENGTH           4096
+#define INIT_VALUES_BUFFER_LEN      10
+#define INIT_ARGS_BUFFER_LEN        10
 
 // macros
 
@@ -266,10 +267,10 @@ typedef enum {
 #define Mcontinuation_null_size     Mcontinuation_size(0)
 #define Mcontinuation_nullp(o)      (Mcontinuation_type(o) == NULL_CONT_TYPE)
 
-#define Mcontinuation_app_size      Mcontinuation_size(2)
-#define Mcontinuation_appp(o)       (Mcontinuation_type(o) == APP_CONT_TYPE)
-#define Mcontinuation_app_hd(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
-#define Mcontinuation_app_tl(o)     (*((obj*) ptr_add(o, 4 * ptr_size)))
+#define Mcontinuation_app_size          Mcontinuation_size(2)
+#define Mcontinuation_appp(o)           (Mcontinuation_type(o) == APP_CONT_TYPE)
+#define Mcontinuation_app_it(o)         (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_app_idx(o)        (*((uptr*) ptr_add(o, 4 * ptr_size)))
 
 #define Mcontinuation_cond_size         Mcontinuation_size(2)
 #define Mcontinuation_condp(o)          (Mcontinuation_type(o) == COND_CONT_TYPE)
@@ -316,7 +317,7 @@ typedef enum {
 #define Mcontinuation_winders_values(o)     (*((obj*) ptr_add(o, 4 * ptr_size)))
 
 obj Mnull_continuation(obj env);
-obj Mapp_continuation(obj prev, obj env, obj args);
+obj Mapp_continuation(obj prev, obj env, obj args, uptr idx);
 obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
@@ -362,11 +363,15 @@ void port_write(int c, obj p);
 // |    vb      | [32, 40)      // values buffer
 // |    va      | [40, 48)      // values buffer allocation size
 // |    vc      | [48, 56)      // values buffer count
-// |    ip      | [56, 64)      // current input port
-// |    op      | [64, 72)      // current output port
-// |    ep      | [72, 80)      // current error port
+// |    ab      | [56, 64)      // argument buffer
+// |    aa      | [64, 72)      // argument buffer allocation size
+// |    ac      | [72, 80)      // argument buffer count
+// |    ar      | [80, 88)      // argument count
+// |    ip      | [88, 96)      // current input port
+// |    op      | [88, 96)      // current output port
+// |    ep      | [96, 104)     // current error port
 // +------------+
-#define Mtc_size            (10 * ptr_size)
+#define Mtc_size            (13 * ptr_size)
 #define Mtcp(o)             (obj_type(o) == THREAD_OBJ_TYPE)
 #define Mtc_cc(o)           (*((obj*) ptr_add(o, ptr_size)))
 #define Mtc_wnd(o)          (*((obj*) ptr_add(o, 2 * ptr_size)))
@@ -374,9 +379,12 @@ void port_write(int c, obj p);
 #define Mtc_vb(o)           (*((obj**) ptr_add(o, 4 * ptr_size)))
 #define Mtc_va(o)           (*((uptr*) ptr_add(o, 5 * ptr_size)))
 #define Mtc_vc(o)           (*((uptr*) ptr_add(o, 6 * ptr_size)))
-#define Mtc_ip(o)           (*((obj*) ptr_add(o, 7 * ptr_size)))
-#define Mtc_op(o)           (*((obj*) ptr_add(o, 8 * ptr_size)))
-#define Mtc_ep(o)           (*((obj*) ptr_add(o, 9 * ptr_size)))
+#define Mtc_ab(o)           (*((obj**) ptr_add(o, 7 * ptr_size)))
+#define Mtc_aa(o)           (*((uptr*) ptr_add(o, 8 * ptr_size)))
+#define Mtc_ac(o)           (*((uptr*) ptr_add(o, 9 * ptr_size)))
+#define Mtc_ip(o)           (*((obj*) ptr_add(o, 10 * ptr_size)))
+#define Mtc_op(o)           (*((obj*) ptr_add(o, 11 * ptr_size)))
+#define Mtc_ep(o)           (*((obj*) ptr_add(o, 12 * ptr_size)))
 
 obj Mthread_context(void);
 

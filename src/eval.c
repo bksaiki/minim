@@ -10,15 +10,6 @@ int Mimmediatep(obj x) {
         || Mstringp(x);
 }
 
-NORETURN void raise_arity_exn(obj prim, obj args) {
-    minim_error2(
-        Msymbol_value(Mprim_name(prim)),
-        "arity mismatch",
-        Mfixnum(Mprim_arity(prim)),
-        Mlength(args)
-    );
-}
-
 static void clear_values_buffer(obj tc) {
     Mtc_vc(tc) = 0;
 }
@@ -61,108 +52,92 @@ static void assert_thunk(const char *name, obj f) {
     }
 }
 
-static void check_prim_arity(obj f, obj args) {
-    if (Mprim_arity(f) >= 0) {
-        switch (Mprim_arity(f)) {
-        case 0:
-            if (!Mnullp(args))
-                raise_arity_exn(f, args);
-            return;
+static void check_prim_arity(obj tc, obj f, uptr arg0) {
+    iptr arity, argc;
 
-        case 1:
-            if (Mnullp(args) || !Mnullp(Mcdr(args)))
-                raise_arity_exn(f, args);
-            return;
-
-        case 2:
-            if (Mnullp(args) || Mnullp(Mcdr(args)) || !Mnullp(Mcddr(args)))
-                raise_arity_exn(f, args);
-            return;
-
-        case 3:
-            if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)) || !Mnullp(Mcdddr(args)))
-                raise_arity_exn(f, args);
-            return;
+    arity = Mprim_arity(f);
+    argc = (iptr) (Mtc_ac(tc) - arg0);
+    if (arity >= 0) {
+        // exact arity
+        if (argc != arity) {
+            minim_error2(
+                Msymbol_value(Mprim_name(f)),
+                "arity mismatch",
+                Mfixnum(Mprim_arity(f)),
+                Mfixnum(argc)
+            );
         }
     } else {
-        switch (-Mprim_arity(f) - 1) {
-        case 0:
-            return;
-
-        case 1:
-            if (Mnullp(args))
-                raise_arity_exn(f, args);
-            return;
-
-        case 2:
-            if (Mnullp(args) || Mnullp(Mcdr(args)))
-                raise_arity_exn(f, args);
-            return;
-
-        case 3:
-            if (Mnullp(args) || Mnullp(Mcdr(args)) || Mnullp(Mcddr(args)))
-                raise_arity_exn(f, args);
-            return;
+        // at-least arity
+        arity = -arity - 1;
+        if (argc < arity) {
+            minim_error2(
+                Msymbol_value(Mprim_name(f)),
+                "arity mismatch",
+                Mlist2(Mintern("at-least"), Mfixnum(Mprim_arity(f))),
+                Mfixnum(argc)
+            );
         }
     }
-
-    minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
 }
 
-// performs `apply` primitive
+// performs `apply` primitive: shifts all arguments in frame by 1
 // flattens the last argument (checks that it is a list)
-static obj do_apply(obj args) {
-    obj hd;
-
-    if (Mnullp(Mcdr(args))) {
-        if (!Mlistp(Mcar(args)))
-            minim_error1("apply", "expected list?", Mcar(args));
-        return Mcar(args);
-    } else {
-        hd = args;
-        while (!Mnullp(Mcddr(args))) args = Mcdr(args);
+static void do_apply(obj tc, uptr arg0) {
+    uptr i, argN;
     
-        if (!Mlistp(Mcadr(args)))
-            minim_error1("apply", "expected list?", Mcadr(args));
-        Mcdr(args) = Mcadr(args);
-    
-        return hd;
+    argN = Mtc_ac(tc) - 1;
+    for (i = arg0; i < argN; i++) {
+        Mtc_ab(tc)[i] = Mtc_ab(tc)[i + 1];
     }
+}
+
+// extract current frame arguments as a list
+// assumes: `arg0 >= 1`
+static obj args_to_list(obj tc, uptr arg0) {
+    obj xs;
+    uptr i;
+
+    xs = Mnull;
+    for (i = Mtc_ac(tc) - 1; i >= arg0; --i)
+        xs = Mcons(Mtc_ab(tc)[i], xs);
+
+    return xs;
 }
 
 // performs `values` primitive
 // if there is only 1 argument, the argument is returned
 // otherwise, the arguments are written to the values buffer
-static obj do_values(obj args) {
-    obj tc;
-    iptr vc, i;
+static obj do_values(obj tc, uptr arg0) {
+    uptr vc;
 
-    // check if safe to write to buffer
-    tc = Mcurr_tc();
     if (Mtc_vc(tc) != 0) {
-        minim_error1("do_values()", "values buffer is not empty", args);
+        minim_error("do_values()", "values buffer is not empty");
     }
 
-    // check if can just return the values
-    vc = list_length(args);
-    if (vc == 1) {
-        return Mcar(args);
-    } else { 
+    vc = Mtc_ac(tc) - arg0;
+    if (vc == 0) {
+        return Mvalues;
+    } else if (vc == 1) {
+        return Mtc_ab(tc)[arg0];
+    } else {
         // check if we need to reallocate
         if (vc >= Mtc_va(tc)) {
             Mtc_va(tc) = 2 * vc;
             Mtc_vb(tc) = GC_malloc(Mtc_va(tc) * sizeof(obj));
         }
 
-        // fill the buffer
+        // copy between buffers
+        memcpy(Mtc_vb(tc), &Mtc_ab(tc)[arg0], vc * sizeof(obj));
         Mtc_vc(tc) = vc;
-        for (i = 0; i < vc; i++) {
-            Mtc_vb(tc)[i] = Mcar(args);
-            args = Mcdr(args);
-        }
 
         return Mvalues;
     }
+}
+
+// pushes a list of the values buffer
+static obj list_to_values(obj tc, obj xs) {
+    minim_error1("list_to_values()", "unimplemented", xs);
 }
 
 // converts the values buffer to a list
@@ -194,30 +169,38 @@ static obj values_to_list(void) {
     }
 }
 
-static obj do_special_prim(obj f, obj args) {
-    obj tc, x;
+// pushes all values to the argument buffer
+static void values_to_args(obj tc) {
+    minim_error("values_to_args()", "unimplemented");
+}
+
+static obj do_special_prim(obj tc, obj f, uptr arg0) {
+    obj x;
 
     tc = Mcurr_tc();
     if (f == list_prim) {
-        return args;
+        return args_to_list(tc, arg0);
     } else if (f == values_prim) {
-        return do_values(args);
+        return do_values(tc, arg0);
     } else if (f == void_prim) {
         return Mvoid;
     } else if (f == dynwind_prim) {
-        Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
-        return Mvoid;
+        minim_error1("do_special_prim()", "unimplemented", f);
+        // Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
+        // return Mvoid;
     } else if (f == callcc_prim) {
-        check_callcc(Mcar(args));
-        continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
-        Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
-        return Mcar(args);
+        check_callcc(Mtc_ab(tc)[arg0]);
+        minim_error1("do_special_prim()", "unimplemented", f);
+        // check_callcc(Mcar(args));
+        // continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
+        // Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
+        // return Mcar(args);
     } else if (f == callwv_prim) {
-        assert_thunk("call-with-values", Mcar(args));
-        Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args));
+        assert_thunk("call-with-values", Mtc_ab(tc)[arg0]);
+        Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_ab(tc)[arg0], Mtc_ab(tc)[arg0 + 1]);
         return Mvoid;
     } else if (f == exit_prim) {
-        x = Mcar(args);
+        x = Mtc_ab(tc)[arg0];
         if (Mfixnump(x) && Mfixnum_value(x) >= 0 && Mfixnum_value(x) <= 0xFF) {
             minim_shutdown(Mfixnum_value(x));
         } else {
@@ -228,7 +211,10 @@ static obj do_special_prim(obj f, obj args) {
     }
 }
 
-static obj do_prim(obj f, obj args) {
+static obj do_prim(obj tc, obj f, uptr arg0) {
+    obj *args;
+
+    args = &Mtc_ab(tc)[arg0];
     switch (Mprim_arity(f))
     {
     case 0:
@@ -239,80 +225,90 @@ static obj do_prim(obj f, obj args) {
     case 1:
         {
             obj (*fn)(obj) = Mprim_value(f);
-            return fn(Mcar(args));
+            return fn(args[0]);
         }
     case 2:
         {
             obj (*fn)(obj, obj) = Mprim_value(f);
-            return fn(Mcar(args), Mcadr(args));
+            return fn(args[0], args[1]);
         }
     case 3:
         {
             obj (*fn)(obj, obj, obj) = Mprim_value(f);
-            return fn(Mcar(args), Mcadr(args), Mcaddr(args));
+            return fn(args[0], args[1], args[2]);
         }
     default:
         minim_error1("eval_expr", "primitive arity unsupported", Mfixnum(Mprim_arity(f)));
     }
 }
 
-static obj do_closure(obj f, obj args) {
-    obj env, it;
-    iptr arity, argc;
+static obj do_closure(obj tc, obj f, obj arg0) {
+    minim_error1("do_closure()", "unimplemented", f);
 
-    arity = Mclosure_arity(f);
-    argc = list_length(args);
-    if (arity < 0) {
-        arity = -arity - 1;
-        if (argc < arity) {
-            minim_error2(
-                Mclosure_name(f),
-                "arity mismatch",
-                Mlist2(Mintern("at-least"), Mfixnum(arity)),
-                Mfixnum(argc)
-            );
-        }
-    } else if (arity != argc) {
-        minim_error2(
-            Mclosure_name(f),
-            "arity mismatch",
-            Mfixnum(arity),
-            Mfixnum(argc)
-        );
-    }
+    // obj env, it;
+    // iptr arity, argc;
 
-    env = env_extend(Mclosure_env(f));
-    it = Mclosure_formals(f);
-    while (Mconsp(it)) {
-        env_insert(env, Mcar(it), Mcar(args));
-        args = Mcdr(args);
-        it = Mcdr(it);
-    }
+    // arity = Mclosure_arity(f);
+    // argc = list_length(args);
+    // if (arity < 0) {
+    //     arity = -arity - 1;
+    //     if (argc < arity) {
+    //         minim_error2(
+    //             Mclosure_name(f),
+    //             "arity mismatch",
+    //             Mlist2(Mintern("at-least"), Mfixnum(arity)),
+    //             Mfixnum(argc)
+    //         );
+    //     }
+    // } else if (arity != argc) {
+    //     minim_error2(
+    //         Mclosure_name(f),
+    //         "arity mismatch",
+    //         Mfixnum(arity),
+    //         Mfixnum(argc)
+    //     );
+    // }
 
-    if (!Mnullp(it)) {
-        env_insert(env, it, args);
-    }
+    // env = env_extend(Mclosure_env(f));
+    // it = Mclosure_formals(f);
+    // while (Mconsp(it)) {
+    //     env_insert(env, Mcar(it), Mcar(args));
+    //     args = Mcdr(args);
+    //     it = Mcdr(it);
+    // }
 
-    return env;
+    // if (!Mnullp(it)) {
+    //     env_insert(env, it, args);
+    // }
+
+    // return env;
 }
 
-static obj do_arg(obj tc, obj x) {
-    obj k = continuation_mutable(Mtc_cc(tc));
-    if (Mcontinuation_app_tl(k)) {
-        // evaluated at least the head
-        //  `hd` the top of the val/arg list
-        //  `tl` car is the last val, cdr is the remaining arguments
-        Mcdr(Mcontinuation_app_tl(k)) = Mcons(x, Mcddr(Mcontinuation_app_tl(k)));
-        Mcontinuation_app_tl(k) = Mcdr(Mcontinuation_app_tl(k));
-    } else {
-        // have not evaluated before
-        //  `hd` is the top of the argument list
-        //  `tl` is NULL
-        Mcontinuation_app_hd(k) = Mcons(x, Mcdr(Mcontinuation_app_hd(k)));
-        Mcontinuation_app_tl(k) = Mcontinuation_app_hd(k);
+static uptr do_arg(obj tc, obj x) {
+    uptr vc, idx;
+    
+    idx = Mtc_ac(tc);
+    vc = Mtc_ac(tc) + 1;
+    if (vc >= Mtc_aa(tc)) {
+        // resize
+        Mtc_ab(tc) = GC_realloc(Mtc_ab(tc), 2 * Mtc_aa(tc));
+        Mtc_aa(tc) = 2 * Mtc_aa(tc);
     }
 
-    return k;
+    Mtc_ab(tc)[idx] = x;
+    Mtc_ac(tc) = vc;
+    return idx;
+}
+
+static void clear_arg_buffer(obj tc, uptr argf) {
+    uptr argc;
+
+    // clear argument buffer starting at `argf`
+    // set new limit to `argf`
+    // TODO: resize when small enough?
+    argc = Mtc_ac(tc) - argf;
+    memset(&Mtc_ab(tc)[argf], 0, argc * sizeof(obj));
+    Mtc_ac(tc) = argf;
 }
 
 static obj do_begin(obj tc) {
@@ -405,11 +401,14 @@ static void do_setb(obj tc, obj x, obj v) {
 }
 
 static obj eval_k(obj e) {
-    obj tc, x, hd, f, args;
+    obj tc, x, hd, f;
+    uptr argf;
 
     tc = Mcurr_tc();
 
 loop:
+
+    writeln_object(stderr, e);
 
     if (Mconsp(e)) {
         // cons => syntax or application
@@ -445,7 +444,7 @@ loop:
             goto do_k;
         } else {
             // application
-            Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), e);
+            Mtc_cc(tc) = Mapp_continuation(Mtc_cc(tc), Mtc_env(tc), Mcdr(e), Mtc_ac(tc));
             e = Mcar(e);
             goto loop;
         }
@@ -476,32 +475,37 @@ loop:
     minim_error1("eval_expr", "unreachable", e);
 
 do_app:
+    f = Mtc_ab(tc)[argf];
     if (Mprimp(f)) {
-        check_prim_arity(f, args);
+        check_prim_arity(tc, f, argf + 1);
         if (Mprim_specialp(f)) {
             if (f == apply_prim) {
-                f = Mcar(args);
+                f = Mtc_ab(tc)[argf + 1];
                 if (!Mprocp(f)) {
                     minim_error1("apply", "expected procedure", f);
                 }
 
-                args = do_apply(Mcdr(args));
+                do_apply(tc, argf + 1);
                 goto do_app;
             } else {
-                x = do_special_prim(f, args);
+                x = do_special_prim(tc, f, argf + 1);
+                clear_arg_buffer(tc, argf);
             }
         } else {
-            x = do_prim(f, args);
+            x = do_prim(tc, f, argf + 1);
+            clear_arg_buffer(tc, argf);
         }
 
         goto do_k;
     } else if (Mclosurep(f)) {
+        minim_error1("eval_expr", "unimplemented", f);
         e = Mclosure_body(f);
-        Mtc_env(tc) = do_closure(f, args);
+        Mtc_env(tc) = do_closure(tc, f, argf + 1);
         goto loop;
     } else if (Mcontinuationp(f)) {
+        minim_error1("eval_expr", "unimplemented", f);
         Mtc_cc(tc) = continuation_restore(tc, f);
-        x = do_values(args);
+        x = do_values(tc, argf + 1);
         goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
@@ -515,24 +519,24 @@ do_k:
 
     // applications
     case APP_CONT_TYPE:
-        assert_single_value(Mtc_cc(tc), x);
-        Mtc_cc(tc) = do_arg(tc, x);
-        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-        if (Mnullp(Mcdr(Mcontinuation_app_tl(Mtc_cc(tc))))) {
-            // evaluated last argument
-            f = Mcar(Mcontinuation_app_hd(Mtc_cc(tc)));
-            args = Mcdr(Mcontinuation_app_hd(Mtc_cc(tc)));
+        assert_single_value(tc, x);
+        do_arg(tc, x);
+        if (Mnullp(Mcontinuation_app_it(Mtc_cc(tc)))) {
+            // evaluated last argument => apply
+            argf = Mcontinuation_app_idx(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_app;
         } else {
-            // still evaluating arguments
-            e = Mcadr(Mcontinuation_app_tl(Mtc_cc(tc)));
+            // keep evaluating arguments
+            e = Mcar(Mcontinuation_app_it(Mtc_cc(tc)));
+            Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
+            Mcontinuation_app_it(Mtc_cc(tc)) = Mcdr(Mcontinuation_app_it(Mtc_cc(tc)));
             goto loop;
         }
 
     // if expressions
     case COND_CONT_TYPE:
-        assert_single_value(Mtc_cc(tc), x);
+        assert_single_value(tc, x);
         Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         e = Mfalsep(x) ? Mcontinuation_cond_iff(Mtc_cc(tc)) : Mcontinuation_cond_ift(Mtc_cc(tc));
         Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
@@ -553,7 +557,7 @@ do_k:
     // set! expressions
     case SETB_CONT_TYPE:
         // update binding, result is void
-        assert_single_value(Mtc_cc(tc), x);
+        assert_single_value(tc, x);
         do_setb(tc, Mcontinuation_setb_name(Mtc_cc(tc)), x);
         x = Mvoid;
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
@@ -571,8 +575,9 @@ do_k:
             Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
             Mcontinuation_capturedp(Mtc_cc(tc)) = 1;
 
-            f = x;
-            args = Mlist1(Mtc_cc(tc));
+            argf = do_arg(tc, x);
+            do_arg(tc, Mtc_cc(tc));
+        
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_app;
@@ -583,20 +588,18 @@ do_k:
         Mtc_cc(tc) = continuation_mutable(Mtc_cc(tc));
         if (Mprocp(Mcontinuation_callwv_producer(Mtc_cc(tc)))) {
             // first time => evaluate producer
-            f = Mcontinuation_callwv_producer(Mtc_cc(tc));
-            args = Mnull;
-    
+            argf = do_arg(tc, Mcontinuation_callwv_producer(Mtc_cc(tc)));    
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mcontinuation_callwv_producer(Mtc_cc(tc)) = Mfalse;
             goto do_app;
         } else {
             // evaluated producer procedure
-            f = Mcontinuation_callwv_consumer(Mtc_cc(tc));
+            argf = do_arg(tc, Mcontinuation_callwv_consumer(Mtc_cc(tc)));
             if (Mvaluesp(x)) {
-                args = values_to_list();
+                values_to_args(tc);
                 clear_values_buffer(tc);
             } else {
-                args = Mlist1(x);
+                do_arg(tc, x);
             }
 
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
@@ -613,8 +616,7 @@ do_k:
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_PRE;
             
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            f = Mcontinuation_dynwind_pre(Mtc_cc(tc));
-            args = Mnull;
+            argf = do_arg(tc, Mcontinuation_dynwind_pre(Mtc_cc(tc)));
             goto do_app;
 
         // evaluated pre thunk
@@ -630,8 +632,7 @@ do_k:
             );
     
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            f = Mcontinuation_dynwind_val(Mtc_cc(tc));
-            args = Mnull;
+            argf = do_arg(tc, Mcontinuation_dynwind_val(Mtc_cc(tc)));
             goto do_app;
 
         // evaluated val thunk
@@ -647,14 +648,13 @@ do_k:
             Mtc_wnd(tc) = Mcdr(Mtc_wnd(tc));
             Mcontinuation_dynwind_state(Mtc_cc(tc)) = DYNWIND_POST;
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            f = Mcontinuation_dynwind_post(Mtc_cc(tc));
-            args = Mnull;
+            argf = do_arg(tc, Mcontinuation_dynwind_post(Mtc_cc(tc)));
             goto do_app;
 
         // evaluated post thunk
         case DYNWIND_POST:
             clear_values_buffer(tc);
-            x = do_values(Mcontinuation_dynwind_val(Mtc_cc(tc)));
+            x = list_to_values(tc, Mcontinuation_dynwind_val(Mtc_cc(tc)));
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_k;
@@ -667,7 +667,7 @@ do_k:
     case WINDERS_CONT_TYPE:
         if (Mnullp(Mcontinuation_winders_it(Mtc_cc(tc)))) {
             // no more winders to execute
-            x = do_values(Mcontinuation_winders_values(Mtc_cc(tc)));
+            x = list_to_values(tc, Mcontinuation_winders_values(Mtc_cc(tc)));
             Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_k;
@@ -685,9 +685,7 @@ do_k:
             }
 
             // Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
-            f = Mcar(Mcontinuation_winders_it(Mtc_cc(tc)));
-            args = Mnull;
-
+            argf = do_arg(tc, Mcar(Mcontinuation_winders_it(Mtc_cc(tc))));
             Mcontinuation_winders_it(Mtc_cc(tc)) = Mcdr(Mcontinuation_winders_it(Mtc_cc(tc)));
             goto do_app;
         }

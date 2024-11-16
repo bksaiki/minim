@@ -112,7 +112,7 @@ obj Mnull_continuation(obj env) {
     return x;
 }
 
-obj Mapp_continuation(obj prev, obj env, obj args) {
+obj Mapp_continuation(obj prev, obj env, obj args, uptr idx) {
     obj x = GC_malloc(Mcontinuation_app_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = APP_CONT_TYPE;
@@ -120,8 +120,8 @@ obj Mapp_continuation(obj prev, obj env, obj args) {
     Mcontinuation_capturedp(x) = 0;
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
-    Mcontinuation_app_hd(x) = args;
-    Mcontinuation_app_tl(x) = NULL;
+    Mcontinuation_app_it(x) = args;
+    Mcontinuation_app_idx(x) = idx;
     return x;
 }
 
@@ -238,6 +238,9 @@ obj Mthread_context(void) {
     Mtc_vb(x) = GC_malloc(INIT_VALUES_BUFFER_LEN * sizeof(obj));
     Mtc_va(x) = INIT_VALUES_BUFFER_LEN;
     Mtc_vc(x) = 0;
+    Mtc_ab(x) = GC_malloc(INIT_ARGS_BUFFER_LEN * sizeof(obj));
+    Mtc_aa(x) = INIT_ARGS_BUFFER_LEN;
+    Mtc_ac(x) = 0;
     Mtc_ip(x) = Minput_file_port(stdin);
     Mtc_op(x) = Moutput_file_port(stdout);
     Mtc_ep(x) = Moutput_file_port(stderr);
