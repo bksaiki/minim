@@ -23,6 +23,18 @@ iptr list_length(obj x) {
     return l;
 }
 
+obj Mmake_list(obj n, obj init) {
+    obj xs;
+    iptr i;
+    
+    xs = Mnull;
+    for (i = Mfixnum_value(n); i >= 0; i--) {
+        xs = Mcons(init, xs);
+    }
+
+    return xs;
+}
+
 obj Mlength(obj x) {
     return Mfixnum(list_length(x));
 }

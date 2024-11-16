@@ -23,6 +23,7 @@ obj set_car_prim;
 obj set_cdr_prim;
 
 obj list_prim;
+obj make_list_prim;
 obj length_prim;
 obj reverse_prim;
 obj append_prim;
@@ -120,6 +121,7 @@ void init_prims(void) {
     set_car_prim = Mprim(Mset_car, 2, "set-car!");
     set_cdr_prim = Mprim(Mset_cdr, 2, "set-cdr!");
 
+    make_list_prim = Mprim(Mmake_list, 2, "make-list");
     length_prim = Mprim(Mlength, 1, "length");
     reverse_prim = Mprim(Mreverse, 1, "reverse");
     append_prim = Mprim(Mappend, 2, "append");
@@ -189,6 +191,7 @@ obj prim_env(obj env) {
     env_add_prim(env, set_car_prim);
     env_add_prim(env, set_cdr_prim);
 
+    env_add_prim(env, make_list_prim);
     env_add_prim(env, length_prim);
     env_add_prim(env, reverse_prim);
     env_add_prim(env, append_prim);

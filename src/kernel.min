@@ -744,7 +744,8 @@
 ;; --------------------------------------------------------
 ;; Lists
 
-(export length
+(export make-list
+        length
         reverse
         append
         for-each
@@ -754,6 +755,11 @@
 
 (define (non-list-error name x)
   (raise-argument-error name "list?" x))
+
+(define (make-list n init)
+  (unless (non-negative-integer? n)
+    (raise-argument-error 'make-list "non-negative-integer?" n))
+  ($make-list n init))
 
 (define (length x)
   (unless (list? x)

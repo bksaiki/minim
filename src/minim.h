@@ -444,6 +444,8 @@ obj Mset_cdr(obj x, obj y);
 
 int Mlistp(obj x);
 iptr list_length(obj x);
+
+obj Mmake_list(obj n, obj init);
 obj Mlength(obj x);
 obj Mreverse(obj x);
 obj Mappend(obj x, obj y);
@@ -530,6 +532,7 @@ extern obj cdr_prim;
 extern obj set_car_prim;
 extern obj set_cdr_prim;
 
+extern obj make_list_prim;
 extern obj list_prim;
 extern obj length_prim;
 extern obj reverse_prim;
