@@ -126,6 +126,19 @@ static uptr do_arg(obj tc, obj x) {
     return idx;
 }
 
+// extract current frame arguments as a list
+// assumes: `arg0 >= 1`
+static obj args_to_list(obj tc, uptr arg0) {
+    obj xs;
+    uptr i;
+
+    xs = Mnull;
+    for (i = Mtc_ac(tc) - 1; i >= arg0; --i)
+        xs = Mcons(Mtc_ab(tc)[i], xs);
+
+    return xs;
+}
+
 static void clear_arg_buffer(obj tc, uptr argf) {
     uptr argc;
 
@@ -140,25 +153,22 @@ static void clear_arg_buffer(obj tc, uptr argf) {
 // performs `apply` primitive: shifts all arguments in frame by 1
 // flattens the last argument (checks that it is a list)
 static void do_apply(obj tc, uptr arg0) {
-    uptr i, argN;
-    
-    argN = Mtc_ac(tc) - 1;
-    for (i = arg0; i < argN; i++) {
+    obj xs;
+    uptr ac, i;
+
+    // shift all arguments (except the last one) by 1
+    ac = Mtc_ac(tc);
+    xs = Mtc_ab(tc)[ac - 1];
+    for (i = arg0; i < ac - 2; i++) {
         Mtc_ab(tc)[i] = Mtc_ab(tc)[i + 1];
     }
-}
 
-// extract current frame arguments as a list
-// assumes: `arg0 >= 1`
-static obj args_to_list(obj tc, uptr arg0) {
-    obj xs;
-    uptr i;
-
-    xs = Mnull;
-    for (i = Mtc_ac(tc) - 1; i >= arg0; --i)
-        xs = Mcons(Mtc_ab(tc)[i], xs);
-
-    return xs;
+    // apply last argument
+    Mtc_ac(tc) -= 2;
+    while (Mconsp(xs)) {
+        do_arg(tc, Mcar(xs));
+        xs = Mcdr(xs);
+    }
 }
 
 // Performs `values` primitive.
@@ -446,8 +456,10 @@ static obj eval_k(obj e) {
 
 loop:
 
-    fprintf(stderr, "eval ");
-    writeln_object(stderr, e);
+    // fprintf(stderr, "eval ");
+    // writeln_object(stderr, e);
+    // fprintf(stderr, " ");
+    // writeln_object(stderr, Mtc_env(tc));
 
     if (Mconsp(e)) {
         // cons => syntax or application
@@ -515,13 +527,6 @@ loop:
 
 do_app:
     f = Mtc_ab(tc)[argf];
-    fprintf(stderr, "do_app: %p", f);
-    for (uptr i = argf + 1; i < Mtc_ac(tc); i++) {
-        fprintf(stderr, " %p", Mtc_ab(tc)[i]);
-    }
-
-    fprintf(stderr, "\n");
-    
     if (Mprimp(f)) {
         check_prim_arity(tc, f, argf + 1);
         if (Mprim_specialp(f)) {
@@ -529,6 +534,11 @@ do_app:
                 f = Mtc_ab(tc)[argf + 1];
                 if (!Mprocp(f)) {
                     minim_error1("apply", "expected procedure", f);
+                }
+
+                x = Mtc_ab(tc)[Mtc_ac(tc) - 1];
+                if (!Mlistp(x)) {
+                    minim_error1("apply", "last argument must be a list", x);
                 }
 
                 Mtc_ab(tc)[argf] = f;
@@ -569,7 +579,6 @@ do_app:
     }
 
 do_k:
-    fprintf(stderr, "do_k %u\n", Mcontinuation_type(Mtc_cc(tc)));
     switch (Mcontinuation_type(Mtc_cc(tc))) {
     // bottom of continuation chain, so exit
     case NULL_CONT_TYPE:
@@ -579,15 +588,7 @@ do_k:
     case APP_CONT_TYPE:
         assert_single_value(tc, x);
         do_arg(tc, x);
-
-        fprintf(stderr, "app-cont:");
-        for (uptr i = Mcontinuation_app_idx(Mtc_cc(tc)); i < Mtc_ac(tc); i++) {
-            fprintf(stderr, " %p", Mtc_ab(tc)[i]);
-        }
-
-        fprintf(stderr, "\n");
-
-
+        Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
         if (Mnullp(Mcontinuation_app_it(Mtc_cc(tc)))) {
             // evaluated last argument => apply
             argf = Mcontinuation_app_idx(Mtc_cc(tc));
@@ -635,6 +636,7 @@ do_k:
         if (Mcontinuation_capturedp(Mtc_cc(tc))) {
             // restoring captured continuation
             Mtc_wnd(tc) = Mcontinuation_callcc_winders(Mtc_cc(tc));
+            Mtc_env(tc) = Mcontinuation_env(Mtc_cc(tc));
             Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
             goto do_k;
         } else {
@@ -767,26 +769,6 @@ do_k:
     }
 }
 
-obj eval_expr(obj e) {
-    obj tc, k, env, v;
-
-    // stash old continuation and environment
-    tc = Mcurr_tc();
-    k = Mtc_cc(tc);
-    env = Mtc_env(tc);
-
-    // evaluate
-    check_expr(e);
-    e = expand_expr(e);
-    Mtc_cc(tc) = Mnull_continuation(env);
-    v = eval_k(e);
-
-    // restore old continuation and environment
-    Mtc_cc(tc) = k;
-    Mtc_env(tc) = env;
-    return v;
-}
-
 static void do_imports(obj tc, obj mod) {
     obj es, e, hd, specs;
 
@@ -872,6 +854,41 @@ void do_module_body(obj mod) {
         Mtc_env(tc) = env;
         Mtc_cc(tc) = k0;
     }
+}
+
+obj eval_expr(obj e) {
+    obj tc, k, env, v, ab;
+    uptr aa, ac;
+
+    // check and expand
+    check_expr(e);
+    e = expand_expr(e);
+
+    // stash mutable thread context info
+    tc = Mcurr_tc();
+    k = Mtc_cc(tc);
+    env = Mtc_env(tc);
+    ab = Mtc_ab(tc);
+    aa = Mtc_aa(tc);
+    ac = Mtc_ac(tc);
+
+    // create new argument buffer
+    Mtc_aa(tc) = INIT_ARGS_BUFFER_LEN;
+    Mtc_ab(tc) = GC_malloc(Mtc_aa(tc) * sizeof(obj));
+    Mtc_ac(tc) = 0;
+
+    // evaluate
+    Mtc_cc(tc) = Mnull_continuation(env);
+    v = eval_k(e);
+
+    // restore mutable thread context info
+    Mtc_cc(tc) = k;
+    Mtc_env(tc) = env;
+    Mtc_ab(tc) = ab;
+    Mtc_aa(tc) = aa;
+    Mtc_ac(tc) = ac;
+    
+    return v;
 }
 
 void eval_module(obj mod) {
