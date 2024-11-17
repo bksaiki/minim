@@ -5,10 +5,10 @@
 static obj condense_body(obj es) {
     if (Mnullp(Mcdr(es))) {
         // single expression => just use expression
-        return expand_expr(Mcar(es));
+        return Mcar(es);
     } else {
         // multiple expressions => wrap in begin
-        return expand_expr(Mcons(Mbegin_symbol, es));
+        return Mcons(Mbegin_symbol, es);
     }
 }
 
@@ -46,7 +46,7 @@ static obj expand_let_values_expr(obj e) {
         tl = Mcdr(tl);
     }
 
-    return Mlist3(Mlet_values_symbol, hd, condense_body(Mcddr(e)));
+    return Mlist3(Mlet_values_symbol, hd, expand_expr(condense_body(Mcddr(e))));
 }
 
 // ([(<id> ...) <expr>] ...)
@@ -265,29 +265,31 @@ loop:
             if (Msymbolp(Mcadr(e))) {
                 // named let => convert to letrec
                 e = expand_let_loop(e);
-                goto loop;
             } else if (Mnullp(Mcadr(e))) {
                 // empty bindings => just use body
-                return condense_body(Mcddr(e));
+                e = condense_body(Mcddr(e));
             } else {
                 // at least one binding
-                e = expand_let_expr(e);
-                goto loop;
+                e = expand_let_expr(e);   
             }
+
+            goto loop;
         } else if (hd == Mletrec_symbol) {
             // letrec => transforms to let
             if (Mnullp(Mcadr(e))) {
                 // empty bindings => just use body
-                return condense_body(Mcddr(e));
+                e = condense_body(Mcddr(e));
             } else {
                 // at least one binding
                 e = expand_letrec_expr(e);
-                goto loop;
             }
+
+            goto loop;
         } else if (hd == Mlet_values_symbol) {
             if (Mnullp(Mcadr(e))) {
                 // empty bindings => just use body
-                return condense_body(Mcddr(e));
+                e = condense_body(Mcddr(e));
+                goto loop;
             } else {
                 // at least one binding
                 return expand_let_values_expr(e);
@@ -327,19 +329,11 @@ loop:
                 expand_expr(Mcar(Mcdddr(e)))
             );
         } else if (hd == Mwhen_symbol) {
-            return Mlist4(
-                Mif_symbol,
-                expand_expr(Mcadr(e)),
-                expand_expr(Mcons(Mbegin_symbol, Mcddr(e))),
-                Mlist2(Mquote_symbol, Mvoid)
-            );
+            e = Mlist4(Mif_symbol, Mcadr(e), Mcons(Mbegin_symbol, Mcddr(e)), Mlist2(Mquote_symbol, Mvoid));
+            goto loop;
         } else if (hd == Munless_symbol) {
-            return Mlist4(
-                Mif_symbol,
-                expand_expr(Mcadr(e)),
-                Mlist2(Mquote_symbol, Mvoid),
-                expand_expr(Mcons(Mbegin_symbol, Mcddr(e)))
-            );
+            e = Mlist4(Mif_symbol, Mcadr(e), Mlist2(Mquote_symbol, Mvoid), Mcons(Mbegin_symbol, Mcddr(e)));
+            goto loop;
         } else if (hd == Mcond_symbol) {
             if (Mnullp(Mcdr(e))) {
                 // empty cond => void
@@ -374,7 +368,7 @@ loop:
                 goto loop;
             }
         } else if (hd == Mlambda_symbol) {
-            return Mlist3(Mlambda_symbol, Mcadr(e), condense_body(Mcddr(e)));
+            return Mlist3(Mlambda_symbol, Mcadr(e), expand_expr(condense_body(Mcddr(e))));
         } else if (hd == Msetb_symbol) {
             return Mlist3(Msetb_symbol, Mcadr(e), expand_expr(Mcaddr(e)));
         } else if (hd == Mquote_symbol) {

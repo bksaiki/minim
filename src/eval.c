@@ -860,7 +860,7 @@ obj eval_expr(obj e) {
     obj tc, k, env, v, ab;
     uptr aa, ac;
 
-    // check and expand
+    // check and expand expression
     check_expr(e);
     e = expand_expr(e);
 
@@ -892,16 +892,25 @@ obj eval_expr(obj e) {
 }
 
 void eval_module(obj mod) {
-    obj tc, k, env;
+    obj tc, k, env, ab;
+    uptr aa, ac;
 
-    // stash old continuation and environment
+    // check and expand module
+    check_module(mod);
+    expand_module(mod);
+
+    // stash mutable thread context info
     tc = Mcurr_tc();
     k = Mtc_cc(tc);
     env = Mtc_env(tc);
-
-    // check module syntax
-    check_module(mod);
-    expand_module(mod);
+    ab = Mtc_ab(tc);
+    aa = Mtc_aa(tc);
+    ac = Mtc_ac(tc);
+    
+    // create new argument buffer
+    Mtc_aa(tc) = INIT_ARGS_BUFFER_LEN;
+    Mtc_ab(tc) = GC_malloc(Mtc_aa(tc) * sizeof(obj));
+    Mtc_ac(tc) = 0;
 
     // set up thread context
     Mtc_env(tc) = empty_env();
@@ -913,7 +922,10 @@ void eval_module(obj mod) {
     do_module_body(mod);
     do_exports(tc, mod);
 
-    // restore old continuation and environment
+    // restore mutable thread context info
     Mtc_cc(tc) = k;
     Mtc_env(tc) = env;
+    Mtc_ab(tc) = ab;
+    Mtc_aa(tc) = aa;
+    Mtc_ac(tc) = ac;
 }
