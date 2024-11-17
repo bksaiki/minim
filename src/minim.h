@@ -291,9 +291,12 @@ typedef enum {
 #define Mcontinuation_setbp(o)          (Mcontinuation_type(o) == SETB_CONT_TYPE)
 #define Mcontinuation_setb_name(o)      (*((obj*) ptr_add(o, 3 * ptr_size)))
 
-#define Mcontinuation_callcc_size           Mcontinuation_size(1)
+#define Mcontinuation_callcc_size           Mcontinuation_size(4)
 #define Mcontinuation_callccp(o)            (Mcontinuation_type(o) == CALLCC_CONT_TYPE)
-#define Mcontinuation_callcc_winders(o)     (*((obj*) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_callcc_ab(o)          (*((obj**) ptr_add(o, 3 * ptr_size)))
+#define Mcontinuation_callcc_aa(o)          (*((uptr*) ptr_add(o, 4 * ptr_size)))
+#define Mcontinuation_callcc_ac(o)          (*((uptr*) ptr_add(o, 5 * ptr_size)))
+#define Mcontinuation_callcc_winders(o)     (*((obj*) ptr_add(o, 6 * ptr_size)))
 
 #define Mcontinuation_callwv_size               Mcontinuation_size(2)
 #define Mcontinuation_callwvp(o)                (Mcontinuation_type(o) == CALLWV_CONT_TYPE)
@@ -322,7 +325,7 @@ obj Mcond_continuation(obj prev, obj env, obj ift, obj iff);
 obj Mseq_continuation(obj prev, obj env, obj seq);
 obj Mlet_continuation(obj prev, obj env, obj bindings, obj body);
 obj Msetb_continuation(obj prev, obj env, obj name);
-obj Mcallcc_continuation(obj prev, obj env, obj winders);
+obj Mcallcc_continuation(obj prev, obj env, obj winders, obj *ab, uptr aa, uptr ac);
 obj Mcallwv_continuation(obj prev, obj env, obj producer, obj consumer);
 obj Mdynwind_continuation(obj prev, obj env, obj pre, obj val, obj post);
 obj Mwinders_continuation(obj prev, obj env, obj winders);

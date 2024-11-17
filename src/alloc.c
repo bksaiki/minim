@@ -176,8 +176,10 @@ obj Msetb_continuation(obj prev, obj env, obj name) {
     return x;
 }
 
-obj Mcallcc_continuation(obj prev, obj env, obj winders) {
-    obj x = GC_malloc(Mcontinuation_callcc_size);
+obj Mcallcc_continuation(obj prev, obj env, obj winders, obj *ab, uptr aa, uptr ac) {
+    obj x;
+    
+    x = GC_malloc(Mcontinuation_callcc_size);
     obj_type(x) = CONTINUATON_OBJ_TYPE;
     Mcontinuation_type(x) = CALLCC_CONT_TYPE;
     Mcontinuation_immutablep(x) = 0;
@@ -185,6 +187,13 @@ obj Mcallcc_continuation(obj prev, obj env, obj winders) {
     Mcontinuation_prev(x) = prev;
     Mcontinuation_env(x) = env;
     Mcontinuation_callcc_winders(x) = winders;
+
+    // copy argument buffer (and metadata)
+    Mcontinuation_callcc_aa(x) = aa;
+    Mcontinuation_callcc_ac(x) = ac;
+    Mcontinuation_callcc_ab(x) = GC_malloc(Mcontinuation_callcc_aa(x) * sizeof(obj));
+    memcpy(Mcontinuation_callcc_ab(x), ab, Mcontinuation_callcc_ac(x) * sizeof(obj));
+
     return x;
 }
 

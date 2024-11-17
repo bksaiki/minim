@@ -83,7 +83,10 @@ obj continuation_mutable(obj k) {
         k2 = Mcallcc_continuation(
             Mcontinuation_prev(k),
             Mcontinuation_env(k),
-            Mcontinuation_callcc_winders(k)
+            Mcontinuation_callcc_winders(k),
+            Mcontinuation_callcc_ab(k),
+            Mcontinuation_callcc_aa(k),
+            Mcontinuation_callcc_ac(k)
         );
         break;
 
@@ -148,27 +151,31 @@ obj continuation_restore(obj tc, obj k) {
     k_winders = Mcontinuation_callcc_winders(k);
     tl = common_tail(cc_winders, k_winders);
 
-    // winders are the same, just restore the continuation
-    if (tl == k_winders) {
-        return k;
-    }
+    // restore argument buffer
+    Mtc_aa(tc) = Mcontinuation_callcc_aa(k);
+    Mtc_ac(tc) = Mcontinuation_callcc_ac(k);
+    Mtc_ab(tc) = GC_malloc(Mtc_ac(tc) * sizeof(obj));
+    memcpy(Mtc_ab(tc), Mcontinuation_callcc_ab(k), Mtc_ac(tc) * sizeof(obj));
 
-    // find all winders in `cc` that need to be unwound
-    unwind = Mnull;
-    for (it = cc_winders; it != tl; it = Mcdr(it)) {
-        // unwinding => need to execute post thunk
-        unwind = Mcons(Mcdar(it), unwind);
-    }
+    // check if we need to modify winders
+    if (tl != k_winders) {
+        // find all winders in `cc` that need to be unwound
+        unwind = Mnull;
+        for (it = cc_winders; it != tl; it = Mcdr(it)) {
+            // unwinding => need to execute post thunk
+            unwind = Mcons(Mcdar(it), unwind);
+        }
 
-    wind = Mnull;
-    for (it = k_winders; it != tl; it = Mcdr(it)) {
-        // winding => need to execute pre thunk
-        wind = Mcons(Mcaar(it), wind);
-    }
+        // find all winders in `k` that need to be rewound
+        wind = Mnull;
+        for (it = k_winders; it != tl; it = Mcdr(it)) {
+            // winding => need to execute pre thunk
+            wind = Mcons(Mcaar(it), wind);
+        }
 
-    // unwind, in reverse order, than wind
-    winders = Mappend(Mreverse(unwind), wind);
-    if (!Mnullp(winders)) {
+        // unwind, in reverse order, then wind
+        winders = Mappend(Mreverse(unwind), wind);
+
         // any winders => need to execute them before anything else
         k = Mwinders_continuation(k, Mcontinuation_env(k), winders);
     }

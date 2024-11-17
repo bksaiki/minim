@@ -81,6 +81,62 @@ static void check_prim_arity(obj tc, obj f, uptr arg0) {
     }
 }
 
+static void check_closure_arity(obj tc, obj f, uptr arg0) {
+    iptr arity, argc;
+
+    arity = Mclosure_arity(f);
+    argc = (iptr) (Mtc_ac(tc) - arg0);
+    if (arity >= 0) {
+        // exact arity
+        if (argc != arity) {
+            minim_error2(
+                Msymbol_value(Mclosure_name(f)),
+                "arity mismatch",
+                Mfixnum(Mclosure_arity(f)),
+                Mfixnum(argc)
+            );
+        }
+    } else {
+        // at-least arity
+        arity = -arity - 1;
+        if (argc < arity) {
+            minim_error2(
+                Msymbol_value(Mclosure_name(f)),
+                "arity mismatch",
+                Mlist2(Mintern("at-least"), Mfixnum(Mclosure_arity(f))),
+                Mfixnum(argc)
+            );
+        }
+    }
+}
+
+static uptr do_arg(obj tc, obj x) {
+    uptr ac, idx;
+    
+    idx = Mtc_ac(tc);
+    ac = Mtc_ac(tc) + 1;
+    if (ac >= Mtc_aa(tc)) {
+        // resize
+        Mtc_aa(tc) = 2 * ac;
+        Mtc_ab(tc) = GC_realloc(Mtc_ab(tc), Mtc_aa(tc) * sizeof(obj));
+    }
+
+    Mtc_ab(tc)[idx] = x;
+    Mtc_ac(tc) = ac;
+    return idx;
+}
+
+static void clear_arg_buffer(obj tc, uptr argf) {
+    uptr argc;
+
+    // clear argument buffer starting at `argf`
+    // set new limit to `argf`
+    // TODO: resize when small enough?
+    argc = Mtc_ac(tc) - argf;
+    memset(&Mtc_ab(tc)[argf], 0, argc * sizeof(obj));
+    Mtc_ac(tc) = argf;
+}
+
 // performs `apply` primitive: shifts all arguments in frame by 1
 // flattens the last argument (checks that it is a list)
 static void do_apply(obj tc, uptr arg0) {
@@ -105,9 +161,9 @@ static obj args_to_list(obj tc, uptr arg0) {
     return xs;
 }
 
-// performs `values` primitive
-// if there is only 1 argument, the argument is returned
-// otherwise, the arguments are written to the values buffer
+// Performs `values` primitive.
+// If there is only 1 argument, the argument is returned.
+// Otherwise, the arguments are written to the values buffer.
 static obj do_values(obj tc, uptr arg0) {
     uptr vc;
 
@@ -124,7 +180,7 @@ static obj do_values(obj tc, uptr arg0) {
         // check if we need to reallocate
         if (vc >= Mtc_va(tc)) {
             Mtc_va(tc) = 2 * vc;
-            Mtc_vb(tc) = GC_malloc(Mtc_va(tc) * sizeof(obj));
+            Mtc_vb(tc) = GC_realloc(Mtc_vb(tc), Mtc_va(tc) * sizeof(obj));
         }
 
         // copy between buffers
@@ -135,9 +191,55 @@ static obj do_values(obj tc, uptr arg0) {
     }
 }
 
-// pushes a list of the values buffer
+// Pushes all values to the argument buffer.
+// This is just the reverse of `do_values()`.
+static void values_to_args(obj tc) {
+    uptr vc, ac;
+
+    vc = Mtc_vc(tc);
+    if (vc > 0) {
+        ac = Mtc_ac(tc) + vc;
+        if (ac >= Mtc_aa(tc)) {
+            // resize
+            Mtc_aa(tc) = 2 * ac;
+            Mtc_ab(tc) = GC_realloc(Mtc_ab(tc), Mtc_aa(tc) * sizeof(obj));
+        }
+
+        // copy between buffers
+        memcpy(&Mtc_ab(tc)[Mtc_ac(tc)], Mtc_vb(tc), vc * sizeof(obj));
+        Mtc_ac(tc) = ac;
+    }
+}
+
+// Pushes a list of the values buffer
 static obj list_to_values(obj tc, obj xs) {
-    minim_error1("list_to_values()", "unimplemented", xs);
+    uptr vc, i;
+
+    if (Mtc_vc(tc) != 0) {
+        minim_error("list_to_values()", "values buffer is not empty");
+    }
+
+    vc = list_length(xs);
+    if (vc == 0) {
+        return Mvalues;
+    } else if (vc == 1) {
+        return Mcar(xs);
+    } else {
+        // check if we need to reallocate
+        if (vc >= Mtc_va(tc)) {
+            Mtc_va(tc) = 2 * vc;
+            Mtc_vb(tc) = GC_realloc(Mtc_vb(tc), Mtc_va(tc) * sizeof(obj));
+        }
+
+        // copy between buffers
+        Mtc_vc(tc) = vc;
+        for (i = 0; i < vc; i++) {
+            Mtc_vb(tc)[i] = Mcar(xs);
+            xs = Mcdr(xs);
+        }
+
+        return Mvalues;
+    }
 }
 
 // converts the values buffer to a list
@@ -169,15 +271,10 @@ static obj values_to_list(void) {
     }
 }
 
-// pushes all values to the argument buffer
-static void values_to_args(obj tc) {
-    minim_error("values_to_args()", "unimplemented");
-}
-
 static obj do_special_prim(obj tc, obj f, uptr arg0) {
-    obj x;
+    obj *args, x;
 
-    tc = Mcurr_tc();
+    args = &Mtc_ab(tc)[arg0];
     if (f == list_prim) {
         return args_to_list(tc, arg0);
     } else if (f == values_prim) {
@@ -185,22 +282,14 @@ static obj do_special_prim(obj tc, obj f, uptr arg0) {
     } else if (f == void_prim) {
         return Mvoid;
     } else if (f == dynwind_prim) {
-        minim_error1("do_special_prim()", "unimplemented", f);
-        // Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), Mcar(args), Mcadr(args), Mcaddr(args));
-        // return Mvoid;
-    } else if (f == callcc_prim) {
-        check_callcc(Mtc_ab(tc)[arg0]);
-        minim_error1("do_special_prim()", "unimplemented", f);
-        // check_callcc(Mcar(args));
-        // continuation_set_immutable(Mtc_cc(tc)); // freeze the continuation chain
-        // Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc));
-        // return Mcar(args);
+        Mtc_cc(tc) = Mdynwind_continuation(Mtc_cc(tc), Mtc_env(tc), args[0], args[1], args[2]);
+        return Mvoid;
     } else if (f == callwv_prim) {
-        assert_thunk("call-with-values", Mtc_ab(tc)[arg0]);
-        Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_ab(tc)[arg0], Mtc_ab(tc)[arg0 + 1]);
+        assert_thunk("call-with-values", args[0]);
+        Mtc_cc(tc) = Mcallwv_continuation(Mtc_cc(tc), Mtc_env(tc), args[0], args[1]);
         return Mvoid;
     } else if (f == exit_prim) {
-        x = Mtc_ab(tc)[arg0];
+        x = args[0];
         if (Mfixnump(x) && Mfixnum_value(x) >= 0 && Mfixnum_value(x) <= 0xFF) {
             minim_shutdown(Mfixnum_value(x));
         } else {
@@ -242,73 +331,22 @@ static obj do_prim(obj tc, obj f, uptr arg0) {
     }
 }
 
-static obj do_closure(obj tc, obj f, obj arg0) {
-    minim_error1("do_closure()", "unimplemented", f);
+static obj do_closure(obj tc, obj f, uptr arg0) {
+    obj env, it;
+    uptr argi;
 
-    // obj env, it;
-    // iptr arity, argc;
-
-    // arity = Mclosure_arity(f);
-    // argc = list_length(args);
-    // if (arity < 0) {
-    //     arity = -arity - 1;
-    //     if (argc < arity) {
-    //         minim_error2(
-    //             Mclosure_name(f),
-    //             "arity mismatch",
-    //             Mlist2(Mintern("at-least"), Mfixnum(arity)),
-    //             Mfixnum(argc)
-    //         );
-    //     }
-    // } else if (arity != argc) {
-    //     minim_error2(
-    //         Mclosure_name(f),
-    //         "arity mismatch",
-    //         Mfixnum(arity),
-    //         Mfixnum(argc)
-    //     );
-    // }
-
-    // env = env_extend(Mclosure_env(f));
-    // it = Mclosure_formals(f);
-    // while (Mconsp(it)) {
-    //     env_insert(env, Mcar(it), Mcar(args));
-    //     args = Mcdr(args);
-    //     it = Mcdr(it);
-    // }
-
-    // if (!Mnullp(it)) {
-    //     env_insert(env, it, args);
-    // }
-
-    // return env;
-}
-
-static uptr do_arg(obj tc, obj x) {
-    uptr vc, idx;
-    
-    idx = Mtc_ac(tc);
-    vc = Mtc_ac(tc) + 1;
-    if (vc >= Mtc_aa(tc)) {
-        // resize
-        Mtc_ab(tc) = GC_realloc(Mtc_ab(tc), 2 * Mtc_aa(tc));
-        Mtc_aa(tc) = 2 * Mtc_aa(tc);
+    argi = arg0;
+    env = env_extend(Mclosure_env(f));
+    for (it = Mclosure_formals(f); Mconsp(it); it = Mcdr(it)) {
+        env_insert(env, Mcar(it), Mtc_ab(tc)[argi]);
+        argi++;
     }
 
-    Mtc_ab(tc)[idx] = x;
-    Mtc_ac(tc) = vc;
-    return idx;
-}
+    if (!Mnullp(it)) {
+        env_insert(env, it, args_to_list(tc, argi));
+    }
 
-static void clear_arg_buffer(obj tc, uptr argf) {
-    uptr argc;
-
-    // clear argument buffer starting at `argf`
-    // set new limit to `argf`
-    // TODO: resize when small enough?
-    argc = Mtc_ac(tc) - argf;
-    memset(&Mtc_ab(tc)[argf], 0, argc * sizeof(obj));
-    Mtc_ac(tc) = argf;
+    return env;
 }
 
 static obj do_begin(obj tc) {
@@ -408,6 +446,7 @@ static obj eval_k(obj e) {
 
 loop:
 
+    fprintf(stderr, "eval ");
     writeln_object(stderr, e);
 
     if (Mconsp(e)) {
@@ -476,6 +515,13 @@ loop:
 
 do_app:
     f = Mtc_ab(tc)[argf];
+    fprintf(stderr, "do_app: %p", f);
+    for (uptr i = argf + 1; i < Mtc_ac(tc); i++) {
+        fprintf(stderr, " %p", Mtc_ab(tc)[i]);
+    }
+
+    fprintf(stderr, "\n");
+    
     if (Mprimp(f)) {
         check_prim_arity(tc, f, argf + 1);
         if (Mprim_specialp(f)) {
@@ -485,33 +531,45 @@ do_app:
                     minim_error1("apply", "expected procedure", f);
                 }
 
+                Mtc_ab(tc)[argf] = f;
                 do_apply(tc, argf + 1);
                 goto do_app;
+            } else if (f == callcc_prim) {
+                x = Mtc_ab(tc)[argf + 1];
+                check_callcc(x);
+                clear_arg_buffer(tc, argf);
+                // freeze the continuation chain and construct a new continuation
+                continuation_set_immutable(Mtc_cc(tc));
+                Mtc_cc(tc) = Mcallcc_continuation(Mtc_cc(tc), Mtc_env(tc), Mtc_wnd(tc), Mtc_ab(tc), Mtc_aa(tc), Mtc_ac(tc));
+                goto do_k;
             } else {
                 x = do_special_prim(tc, f, argf + 1);
-                clear_arg_buffer(tc, argf);
             }
         } else {
             x = do_prim(tc, f, argf + 1);
-            clear_arg_buffer(tc, argf);
+            
         }
 
+        clear_arg_buffer(tc, argf);
         goto do_k;
     } else if (Mclosurep(f)) {
-        minim_error1("eval_expr", "unimplemented", f);
-        e = Mclosure_body(f);
+        check_closure_arity(tc, f, argf + 1);
         Mtc_env(tc) = do_closure(tc, f, argf + 1);
+        e = Mclosure_body(f);
+        clear_arg_buffer(tc, argf);
         goto loop;
     } else if (Mcontinuationp(f)) {
-        minim_error1("eval_expr", "unimplemented", f);
-        Mtc_cc(tc) = continuation_restore(tc, f);
         x = do_values(tc, argf + 1);
+        clear_arg_buffer(tc, argf);
+
+        Mtc_cc(tc) = continuation_restore(tc, f);
         goto do_k;
     } else {
         minim_error1("eval_expr", "application: not a procedure", x);
     }
 
 do_k:
+    fprintf(stderr, "do_k %u\n", Mcontinuation_type(Mtc_cc(tc)));
     switch (Mcontinuation_type(Mtc_cc(tc))) {
     // bottom of continuation chain, so exit
     case NULL_CONT_TYPE:
@@ -521,6 +579,15 @@ do_k:
     case APP_CONT_TYPE:
         assert_single_value(tc, x);
         do_arg(tc, x);
+
+        fprintf(stderr, "app-cont:");
+        for (uptr i = Mcontinuation_app_idx(Mtc_cc(tc)); i < Mtc_ac(tc); i++) {
+            fprintf(stderr, " %p", Mtc_ab(tc)[i]);
+        }
+
+        fprintf(stderr, "\n");
+
+
         if (Mnullp(Mcontinuation_app_it(Mtc_cc(tc)))) {
             // evaluated last argument => apply
             argf = Mcontinuation_app_idx(Mtc_cc(tc));
@@ -559,8 +626,8 @@ do_k:
         // update binding, result is void
         assert_single_value(tc, x);
         do_setb(tc, Mcontinuation_setb_name(Mtc_cc(tc)), x);
-        x = Mvoid;
         Mtc_cc(tc) = Mcontinuation_prev(Mtc_cc(tc));
+        x = Mvoid;
         goto do_k;
     
     // call/cc expressions
