@@ -98,6 +98,19 @@ int test_read_pair() {
     return passed;
 }
 
+int test_read_vector(void) {
+    passed = 1;
+
+    check_equal("#()", "#()");
+    check_equal("#(1)", "#(1)");
+    check_equal("#(1 2 3)", "#(1 2 3)");
+
+    check_equal("#((1 2) (3 4))", "#((1 2) (3 4))");
+    check_equal("#((1 2) (3 4) (5 6))", "#((1 2) (3 4) (5 6))");
+
+    return passed;
+}
+
 int main(int argc, char **argv) {
     GC_init();
     minim_init();

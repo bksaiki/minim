@@ -234,6 +234,31 @@ static obj read_pair(obj ip, char open_paren) {
     }
 }
 
+static obj read_vector(obj ip) {
+    obj hd, tl, x;
+    int c;
+
+    hd = tl = Mnull;
+    while (1) {
+        skip_whitespace(ip);
+        c = port_peek(ip);
+        if (c == ')') {
+            read_char(ip);
+            break;
+        }
+
+        x = read_object(ip);
+        if (Mnullp(hd)) {
+            hd = tl = Mlist1(x);
+        } else {
+            Mcdr(tl) = Mlist1(x);
+            tl = Mcdr(tl);
+        }
+    }
+
+    return list_to_vector(hd);
+}
+
 obj read_object(obj ip) {
     char buffer[SYMBOL_MAX_LENGTH];
     long num, i, block_level;
@@ -268,9 +293,10 @@ loop:
         // case '\'':
         //     // quote
         //     return Mcons(intern("quote-syntax"), Mcons(read_object(in), minim_null));
-        // case '(':
-        //     // vector
-        //     return read_vector(in);
+        case '(':
+            // vector
+            port_read(ip);
+            return read_vector(ip);
         // case '&':
         //     // vector
         //     return Mbox(read_object(in));

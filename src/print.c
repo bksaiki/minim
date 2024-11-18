@@ -38,6 +38,25 @@ loop:
     fputc(')', out);
 }
 
+static void write_vector(FILE *out, obj o) {
+    uptr len, i;
+
+    len = Mvector_len(o);
+    if (len == 0) {
+        fputs("#()", out);
+    }  else {
+        fputs("#(", out);
+        write_obj(out, Mvector_ref(o, 0));
+    
+        for (i = 1; i < len; i++) {
+            fputc(' ', out);
+            write_obj(out, Mvector_ref(o, i));
+        }
+
+        fputc(')', out);
+    }
+}
+
 static void write_module(FILE *out, obj o) {
     obj path, subpath;
 
@@ -87,6 +106,8 @@ void write_obj(FILE *out, obj o) {
         fprintf(out, "\"%s\"", Mstring_value(o));
     } else if (Mconsp(o)) {
         write_pair(out, o);
+    } else if (Mvectorp(o)) {
+        write_vector(out, o);
     } else if (Mprimp(o)) {
         fputs("#<procedure:", out);
         write_obj(out, Mprim_name(o));

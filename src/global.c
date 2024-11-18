@@ -7,6 +7,8 @@ obj Mtrue;
 obj Mfalse;
 obj Mvoid;
 obj Meof;
+obj Memptyvec;
+
 obj Mvalues;
 obj Munbound;
 
@@ -47,6 +49,11 @@ void minim_init(void) {
     obj_type(Mvoid) = SPECIAL_OBJ_TYPE;
     Meof = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Meof) = SPECIAL_OBJ_TYPE;
+
+    Memptyvec = GC_malloc_uncollectable(Mvector_size(0));
+    obj_type(Memptyvec) = VECTOR_OBJ_TYPE;
+    Mvector_len(Memptyvec) = 0;
+
     Mvalues = GC_malloc_uncollectable(sizeof(byte));
     obj_type(Mvalues) = SPECIAL_OBJ_TYPE;
     Munbound = GC_malloc_uncollectable(sizeof(byte));

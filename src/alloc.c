@@ -47,6 +47,25 @@ obj Mcons(obj car, obj cdr) {
     return x;
 }
 
+obj Mvector(uptr len, obj init) {
+    obj x;
+    uptr i;
+
+    if (len == 0) {
+        return Memptyvec;
+    } else {
+        x = GC_malloc(Mvector_size(len));
+        obj_type(x) = VECTOR_OBJ_TYPE;
+        Mvector_len(x) = len;
+        if (init != NULL) {
+            for (i = 0; i < len; i++)
+                Mvector_ref(x, i) = init;
+        }
+
+        return x;
+    }
+}
+
 obj Mprim(void *fn, iptr arity, const char *name) {
     obj x = GC_malloc(Mprim_size);
     obj_type(x) = PRIM_OBJ_TYPE;

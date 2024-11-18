@@ -84,6 +84,7 @@ typedef enum {
     CHAR_OBJ_TYPE,
     STRING_OBJ_TYPE,
     CONS_OBJ_TYPE,
+    VECTOR_OBJ_TYPE,
     PRIM_OBJ_TYPE,
     CLOSURE_OBJ_TYPE,
     CONTINUATON_OBJ_TYPE,
@@ -103,6 +104,8 @@ extern obj Mtrue;
 extern obj Mfalse;
 extern obj Mvoid;
 extern obj Meof;
+extern obj Memptyvec;
+
 extern obj Mvalues;
 extern obj Munbound;
 
@@ -111,6 +114,8 @@ extern obj Munbound;
 #define Mfalsep(x)      ((x) == Mfalse)
 #define Mvoidp(x)       ((x) == Mvoid)
 #define Meofp(x)        ((x) == Meof)
+#define Memptyvecp(x)   ((x) == Memptyvec)
+
 #define Mvaluesp(x)     ((x) == Mvalues)
 #define Munboundp(x)    ((x) == Munbound)
 
@@ -195,6 +200,19 @@ obj Mcons(obj car, obj cdr);
 #define Mlist2(x, y)            Mcons(x, Mlist1(y))
 #define Mlist3(x, y, z)         Mcons(x, Mlist2(y, z))
 #define Mlist4(w, x, y, z)      Mcons(w, Mlist3(x, y, z))
+
+// Vector
+// +------------+
+// |    type    | [0, 1)
+// |    len     | [8, 16)
+// |    arr     | [16, ...)
+// +------------+
+#define Mvector_size(n)         ((2 + (n)) * ptr_size)
+#define Mvectorp(o)             (obj_type(o) == VECTOR_OBJ_TYPE)
+#define Mvector_len(o)          (*((uptr *) ptr_add(o, ptr_size)))
+#define Mvector_ref(o, i)       (*((obj *) ptr_add(o, (2 + (i)) * ptr_size)))
+
+obj Mvector(uptr len, obj init);
 
 // Primitive
 // +------------+
@@ -461,6 +479,10 @@ obj Mlength(obj x);
 obj Mreverse(obj x);
 obj Mappend(obj x, obj y);
 obj list_tail(obj x, iptr i);
+
+// Vector
+
+obj list_to_vector(obj x);
 
 // Continuations
 

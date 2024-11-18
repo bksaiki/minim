@@ -7,7 +7,8 @@ int Mimmediatep(obj x) {
         || Mfalsep(x)
         || Mfixnump(x)
         || Mcharp(x)
-        || Mstringp(x);
+        || Mstringp(x)
+        || Mvectorp(x);
 }
 
 static void clear_values_buffer(obj tc) {
