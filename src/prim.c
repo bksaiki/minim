@@ -13,6 +13,7 @@ obj fixnump_prim;
 obj charp_prim;
 obj stringp_prim;
 obj consp_prim;
+obj vectorp_prim;
 obj procp_prim;
 obj listp_prim;
 
@@ -27,6 +28,10 @@ obj make_list_prim;
 obj length_prim;
 obj reverse_prim;
 obj append_prim;
+
+obj vector_length_prim;
+obj vector_ref_prim;
+obj vector_set_prim;
 
 obj fx_neg_prim;
 obj fx_inc_prim;
@@ -65,6 +70,8 @@ obj void_prim;
     static obj name(obj x) { return (e); }
 #define proc2(name, x, y, e) \
     static obj name(obj x, obj y) { return (e); }
+#define proc3(name, x, y, z, e) \
+    static obj name(obj x, obj y, obj z) { return (e); }
 #define uncallable_proc(name) \
     static obj name(obj x) { minim_error("" #name "()", "should never call"); }
 
@@ -79,12 +86,21 @@ proc1(fixnump_proc, x, Mbool(Mfixnump(x)))
 proc1(charp_proc, x, Mbool(Mcharp(x)))
 proc1(stringp_proc, x, Mbool(Mstringp(x)))
 proc1(consp_proc, x, Mbool(Mconsp(x)))
+proc1(vectorp_proc, x, Mbool(Mvectorp(x)))
 proc1(procp_proc, x, Mbool(Mprocp(x)))
 proc1(listp_proc, x, Mbool(Mlistp(x)))
 
-proc1(not_proc, x, Mnot(x));
+proc1(not_proc, x, Mnot(x))
 proc1(car_proc, x, Mcar(x))
 proc1(cdr_proc, x, Mcdr(x))
+
+proc1(vector_length_proc, x, Mfixnum(Mvector_len(x)))
+proc2(vector_ref_proc, x, y, Mvector_ref(x, Mfixnum_value(y)))
+
+static obj vector_set_proc(obj v, obj i, obj x) {
+    Mvector_ref(v, Mfixnum_value(i)) = x;
+    return Mvoid;
+}
 
 proc2(eq_proc, x, y, Mbool(Meqp(x, y)))
 proc2(equal_proc, x, y, Mbool(Mequalp(x, y)))
@@ -112,6 +128,7 @@ void init_prims(void) {
     charp_prim = Mprim(charp_proc, 1, "char?");
     stringp_prim = Mprim(stringp_proc, 1, "string?");
     consp_prim = Mprim(consp_proc, 1, "pair?");
+    vectorp_prim = Mprim(vectorp_proc, 1, "vector?");
     procp_prim = Mprim(procp_proc, 1, "procedure?");
     listp_prim = Mprim(listp_proc, 1, "list?");
 
@@ -125,6 +142,10 @@ void init_prims(void) {
     length_prim = Mprim(Mlength, 1, "length");
     reverse_prim = Mprim(Mreverse, 1, "reverse");
     append_prim = Mprim(Mappend, 2, "append");
+
+    vector_length_prim = Mprim(vector_length_proc, 1, "vector-length");
+    vector_ref_prim = Mprim(vector_ref_proc, 2, "vector-ref");
+    vector_set_prim = Mprim(vector_set_proc, 3, "vector-set!");
 
     fx_neg_prim = Mprim(Mfx_neg, 1, "fxneg");
     fx_inc_prim = Mprim(Mfx_inc, 1, "fx1+");
@@ -182,6 +203,7 @@ obj prim_env(obj env) {
     env_add_prim(env, charp_prim);
     env_add_prim(env, stringp_prim);
     env_add_prim(env, consp_prim);
+    env_add_prim(env, vectorp_prim);
     env_add_prim(env, procp_prim);
     env_add_prim(env, listp_prim);
 
@@ -195,6 +217,10 @@ obj prim_env(obj env) {
     env_add_prim(env, length_prim);
     env_add_prim(env, reverse_prim);
     env_add_prim(env, append_prim);
+
+    env_add_prim(env, vector_length_prim);
+    env_add_prim(env, vector_ref_prim);
+    env_add_prim(env, vector_set_prim);
 
     env_add_prim(env, fx_neg_prim);
     env_add_prim(env, fx_inc_prim);

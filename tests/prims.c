@@ -67,8 +67,8 @@ int test_type(void) {
     // check_true ("(char? #\\a)");
     // check_false("(char? 1)");
 
-    // check_true ("(vector? #(1))");
-    // check_false("(vector? 1)");
+    check_true ("(vector? #(1))");
+    check_false("(vector? 1)");
 
     check_true ("(string? \"foo\")");
     check_false("(string? 1)");
@@ -100,8 +100,9 @@ int test_eq(void) {
     check_false("(eq? '(1) '(1))");
     check_false("(eq? '(1 . 2) '(1 . 2))");
 
-    // check_true ("(eq? #() #())");
-    // check_false("(eq? #(1) #(1))");
+    check_true ("(eq? #() #())");
+    check_false("(eq? #(1) #(1))");
+    check_false("(eq? #(1 2 3) #(1 2 3))");
 
     check_true ("(eq? car car)");
     check_false("(eq? car cdr)");
@@ -139,11 +140,11 @@ int test_equal(void) {
     check_true ("(equal? car car)");
     check_false("(equal? car cdr)");
 
-    // check_true("(equal? #() #())");
-    // check_true("(equal? #(1) #(1))");
-    // check_false("(equal? #(0) #(1))");
-    // check_true("(equal? #(1 2 3) #(1 2 3))");
-    // check_false("(equal? #(1 2) #(1 2 3))");
+    check_true("(equal? #() #())");
+    check_true("(equal? #(1) #(1))");
+    check_false("(equal? #(0) #(1))");
+    check_true("(equal? #(1 2 3) #(1 2 3))");
+    check_false("(equal? #(1 2) #(1 2 3))");
 
     check_true ("(let ([x '(a)]) (equal? x x))");
     check_true ("(let ([f (lambda (x) x)]) (equal? f f))");
@@ -189,6 +190,20 @@ int test_list(void) {
     check_equal("(append '(a b c) '(d))", "(a b c d)");
     check_equal("(append '(a b c) '(d e f))", "(a b c d e f)");
 
+
+    return passed;
+}
+
+int test_vector(void) {
+    passed = 1;
+
+    check_equal("(vector-length #())", "0");
+    check_equal("(vector-length #(1))", "1");
+    check_equal("(vector-length #(1 2 3))", "3");
+
+    check_equal("(vector-ref #(1 2 3) 0)", "1");
+    check_equal("(vector-ref #(1 2 3) 1)", "2");
+    check_equal("(vector-ref #(1 2 3) 2)", "3");
 
     return passed;
 }
@@ -296,6 +311,7 @@ int main(int argc, char **argv) {
     log_test("eq", test_eq, return_code);
     log_test("equal", test_equal, return_code);
     log_test("list", test_list, return_code);
+    log_test("vector", test_vector, return_code);
     log_test("call-with-values", test_callwv, return_code);
     log_test("call/cc", test_callcc, return_code);
     log_test("dynamic-wind", test_dynamic_wind, return_code);

@@ -556,6 +556,7 @@ extern obj fixnump_prim;
 extern obj charp_prim;
 extern obj stringp_prim;
 extern obj consp_prim;
+extern obj vectorp_prim;
 extern obj procp_prim;
 extern obj listp_prim;
 
@@ -570,6 +571,10 @@ extern obj list_prim;
 extern obj length_prim;
 extern obj reverse_prim;
 extern obj append_prim;
+
+extern obj vector_length_prim;
+extern obj vector_ref_prim;
+extern obj vector_set_prim;
 
 extern obj fx_neg_prim;
 extern obj fx_inc_prim;

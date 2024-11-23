@@ -3,7 +3,7 @@
 #include "minim.h"
 
 int main(int argc, char **argv) {
-    obj tc, e, v;
+    obj tc, e, x;
 
     printf("Minim v%s\n", MINIM_VERSION);
 
@@ -23,11 +23,12 @@ int main(int argc, char **argv) {
             break;
         }
 
-        v = eval_expr(e);
-    
-        write_obj(stdout, v);
-        fputc('\n', stdout);
-        fflush(stdout);
+        x = eval_expr(e);
+        if (!Mvoidp(x)) {
+            write_obj(stdout, x);
+            fputc('\n', stdout);
+            fflush(stdout);
+        }
     }
     
     minim_shutdown(0);

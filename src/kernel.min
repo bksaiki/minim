@@ -27,6 +27,7 @@
         char?
         string?
         pair?
+        vector?
         procedure?
         list?
         boolean?)
@@ -41,6 +42,7 @@
 (define char? $char?)
 (define string? $string?)
 (define pair? $pair?)
+(define vector? $vector?)
 (define procedure? $procedure?)
 (define list? $list?)
 
@@ -890,3 +892,32 @@
             [(null? (car xss)) #f]
             [(f (map1 car xss)) #t]
             [else (loop (map1 cdr xss))])))))
+
+;; --------------------------------------------------------
+;; Vectors
+
+(export vector-length
+        vector-ref
+        vector-set!)
+
+(define (non-vector-error name x)
+  (raise-argument-error name "vector?" x))
+
+(define (vector-length v)
+  (unless (vector? v)
+    (non-vector-error 'vector-length x))
+  ($vector-length v))
+
+(define (vector-ref v idx)
+  (unless (vector? v)
+    (non-vector-error 'vector-ref v))
+  (unless (and (fixnum? idx) (>= idx 0))
+    (raise-argument-error 'vector-ref "non-negative fixnum" idx))
+  ($vector-ref v idx))
+
+(define (vector-set! v idx x)
+  (unless (vector? v)
+    (non-vector-error 'vector-ref v))
+  (unless (and (fixnum? idx) (>= idx 0))
+    (raise-argument-error 'vector-set! "non-negative fixnum" idx))
+  ($vector-set! v idx x))

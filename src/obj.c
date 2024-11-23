@@ -19,6 +19,8 @@ int Meqp(obj x, obj y) {
 }
 
 int Mequalp(obj x, obj y) {
+    uptr i;
+
     if (Meqp(x, y)) {
         return 1;
     } else if (obj_type(x) != obj_type(y)) {
@@ -29,6 +31,17 @@ int Mequalp(obj x, obj y) {
             return strcmp(Mstring_value(x), Mstring_value(y)) == 0;
         case CONS_OBJ_TYPE:
             return Mequalp(Mcar(x), Mcar(y)) && Mequalp(Mcdr(x), Mcdr(y));
+        case VECTOR_OBJ_TYPE:
+            if (Mvector_len(x) != Mvector_len(y))
+                return 0;
+            
+            for (i = 0; i < Mvector_len(x); i++) {
+                if (!Mequalp(Mvector_ref(x, i), Mvector_ref(y, i)))
+                    return 0;
+            }
+
+            return 1;
+
         default:
             return 0;
         }
