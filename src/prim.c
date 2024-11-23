@@ -32,6 +32,8 @@ obj append_prim;
 obj vector_length_prim;
 obj vector_ref_prim;
 obj vector_set_prim;
+obj vector_to_list_prim;
+obj list_to_vector_prim;
 
 obj fx_neg_prim;
 obj fx_inc_prim;
@@ -146,6 +148,8 @@ void init_prims(void) {
     vector_length_prim = Mprim(vector_length_proc, 1, "vector-length");
     vector_ref_prim = Mprim(vector_ref_proc, 2, "vector-ref");
     vector_set_prim = Mprim(vector_set_proc, 3, "vector-set!");
+    vector_to_list_prim = Mprim(vector_to_list, 1, "vector->list");
+    list_to_vector_prim = Mprim(list_to_vector, 1, "list->vector");
 
     fx_neg_prim = Mprim(Mfx_neg, 1, "fxneg");
     fx_inc_prim = Mprim(Mfx_inc, 1, "fx1+");
@@ -221,6 +225,8 @@ obj prim_env(obj env) {
     env_add_prim(env, vector_length_prim);
     env_add_prim(env, vector_ref_prim);
     env_add_prim(env, vector_set_prim);
+    env_add_prim(env, vector_to_list_prim);
+    env_add_prim(env, list_to_vector_prim);
 
     env_add_prim(env, fx_neg_prim);
     env_add_prim(env, fx_inc_prim);

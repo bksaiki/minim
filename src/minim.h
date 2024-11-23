@@ -482,6 +482,7 @@ obj list_tail(obj x, iptr i);
 
 // Vector
 
+obj vector_to_list(obj v);
 obj list_to_vector(obj x);
 
 // Continuations
@@ -575,6 +576,8 @@ extern obj append_prim;
 extern obj vector_length_prim;
 extern obj vector_ref_prim;
 extern obj vector_set_prim;
+extern obj vector_to_list_prim;
+extern obj list_to_vector_prim;
 
 extern obj fx_neg_prim;
 extern obj fx_inc_prim;
