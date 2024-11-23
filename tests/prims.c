@@ -163,7 +163,6 @@ int test_callwv(void) {
     return passed;
 }
 
-
 int test_list(void) {
     passed = 1;
 
@@ -204,6 +203,18 @@ int test_vector(void) {
     check_equal("(vector-ref #(1 2 3) 0)", "1");
     check_equal("(vector-ref #(1 2 3) 1)", "2");
     check_equal("(vector-ref #(1 2 3) 2)", "3");
+
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 0 0) v)", "#(0 2 3)");
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 1 0) v)", "#(1 0 3)");
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 2 0) v)", "#(1 2 0)");
+
+    check_equal("(vector->list #())", "()");
+    check_equal("(vector->list #(1))", "(1)");
+    check_equal("(vector->list #(1 2 3))", "(1 2 3)");
+
+    check_equal("(list->vector '())", "#()");
+    check_equal("(list->vector '(1))", "#(1)");
+    check_equal("(list->vector '(1 2 3))", "#(1 2 3)");
 
     return passed;
 }

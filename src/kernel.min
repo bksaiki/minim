@@ -896,11 +896,15 @@
 ;; --------------------------------------------------------
 ;; Vectors
 
-(export vector-length
+(export vector
+        vector-length
         vector-ref
         vector-set!
         vector->list
         list->vector)
+
+(define (vector . xs)
+  ($list->vector xs))
 
 (define (non-vector-error name x)
   (raise-argument-error name "vector?" x))
@@ -932,4 +936,4 @@
 (define (list->vector xs)
   (unless (list? xs)
     (non-vector-error 'list->vector xs))
-  ($list->vector v))
+  ($list->vector xs))

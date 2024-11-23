@@ -326,6 +326,37 @@ int test_list(void) {
     return passed;
 }
 
+int test_vector(void) {
+    passed = 1;
+
+    check_equal("(vector)", "#()");
+    check_equal("(vector 1)", "#(1)");
+    check_equal("(vector 1 2 3)", "#(1 2 3)");
+
+    check_equal("(vector-length #())", "0");
+    check_equal("(vector-length #(1))", "1");
+    check_equal("(vector-length #(1 2 3))", "3");
+
+    check_equal("(vector-ref #(1 2 3) 0)", "1");
+    check_equal("(vector-ref #(1 2 3) 1)", "2");
+    check_equal("(vector-ref #(1 2 3) 2)", "3");
+
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 0 0) v)", "#(0 2 3)");
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 1 0) v)", "#(1 0 3)");
+    check_equal("(let-values ([(v) #(1 2 3)]) (vector-set! v 2 0) v)", "#(1 2 0)");
+
+    check_equal("(vector->list #())", "()");
+    check_equal("(vector->list #(1))", "(1)");
+    check_equal("(vector->list #(1 2 3))", "(1 2 3)");
+
+    check_equal("(list->vector '())", "#()");
+    check_equal("(list->vector '(1))", "#(1)");
+    check_equal("(list->vector '(1 2 3))", "#(1 2 3)");
+
+
+    return passed;
+}
+
 int test_callwv(void) {
     passed = 1;
 
@@ -440,6 +471,7 @@ int main(int argc, char **argv) {
     log_test("num", test_num, return_code);
     log_test("pair", test_pair, return_code);
     log_test("list", test_list, return_code);
+    log_test("vector", test_vector, return_code);
     log_test("call-with-values", test_callwv, return_code);
     log_test("call/cc", test_callcc, return_code);
     log_test("dynamic-wind", test_dynamic_wind, return_code);
